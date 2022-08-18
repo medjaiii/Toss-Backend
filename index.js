@@ -2,7 +2,7 @@ import  express  from "express"
 import mongoose from "mongoose"
 import dotenv from "dotenv"
 
-import SignUpRouter from "../Naukri/apps/web-client/sign_up_api/router/signupRouter.js"
+import SignUpRouter from "./apps/web-client/sign_up_api/router/SignupRouter.js"
 
 dotenv.config()
 
