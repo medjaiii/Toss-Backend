@@ -3,16 +3,19 @@ import expressAsyncHandler from "express-async-handler";
 import ProfileModel from "../model/UserProfile.js";
 import uploadFile from "../../../../Multer_config.js";
 import UserProfileImages from "../model/UserImages.js";
+import { option } from "../../../../DataBaseConstants.js";
+import { isAuth } from "../../util.js";
+
 
 const UserProfileRouter = express.Router();
 
-UserProfileRouter.post("/addProfile",uploadFile,
+UserProfileRouter.post("/addProfile",isAuth,uploadFile,
   expressAsyncHandler(async (req, res, next) => {
     const images = req.files.reduce(
       (acc, image) => [...acc, { name: image.location }],
       []
     );
-
+    
     const userImages = new UserProfileImages({
       userProfileImage: images,
     });
@@ -43,11 +46,11 @@ UserProfileRouter.post("/addProfile",uploadFile,
 );
 
 UserProfileRouter.patch(
-  "/editProfile/:id",uploadFile,
+  "/editProfile/:id",isAuth,uploadFile,
   expressAsyncHandler(async (req, res,next) => {
     const id = req.params.id;
       
-    await ProfileModel.findByIdAndUpdate(id,req.body,{useFindAndModify: false})
+    await ProfileModel.findByIdAndUpdate(id,req.body,{useFindAndModify: false},option)
     .then(data=>{
         if(!data){
             res.status(404).send({
@@ -68,7 +71,7 @@ UserProfileRouter.patch(
 );
 
 UserProfileRouter.put(
-  "/editImages/:id",uploadFile,
+  "/editImages/:id",isAuth,uploadFile,
   expressAsyncHandler(async (req, res,next) => {
     const id = req.params.id;
     
@@ -76,20 +79,13 @@ UserProfileRouter.put(
       (acc, image) => [...acc, { name: image.location }],
       []
     );
-    await UserProfileImages.findByIdAndUpdate(id,{userProfileImage:images},{useFindAndModify:false})
+    UserProfileImages.findByIdAndUpdate(id,{userProfileImage:images},option)
     .then((data)=>{
-      if(!data){
-        res.status(404).send({
-            message:"Cannot Update"
-        })
-    }else{
-        res.status(200).send({message:`Success. Updated ID is ${data}`})
-    }
+      res.status(200).json(data)
     })
     .catch((err)=>{
-      res.status(500).send({message:err})
+      res.status(500).json({"message":err})
     })
-
     
   })
 );
@@ -99,11 +95,22 @@ UserProfileRouter.get(
   expressAsyncHandler(async (req, res,next) => {
     const id = req.params.id;
 
-    const resu = UserProfileImages.findById({ _id: req.params.id } )
+    const resu = UserProfileImages.findById({ _id: id } )
     .then((data)=>{
         console.log(data)      
+        res.send(resu)
     })
-    res.send(resu)
+    .catch((err)=>{
+      res.status(500).json({
+        message:err
+      })
+    })
+    // db.groups.update(
+    //   {"_id": ObjectId("5a7da1bda21d5f3e8cf005b3")},
+    //   {"$pull":{"group_members":{"faculty_number":{$in:[8025,7323]}}}}
+    // )
+    // Image.updateOne({ _id: req.params.id }, { $pull: { images: { image: imageName }} });
+
   
   })
 );
