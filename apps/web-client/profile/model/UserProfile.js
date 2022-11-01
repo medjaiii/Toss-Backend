@@ -41,7 +41,8 @@ const UserSignUp = mongoose.Schema({
     }],
     default: undefined
 },
-  profileImages:{ type: mongoose.Schema.Types.ObjectId,ref :"UserProfileImages"}
+  profileImages:{ type: mongoose.Schema.Types.ObjectId,ref :"UserProfileImages"},
+  approvedStatus:{type:String,default:"Unapproved"}
 });
 
 mongoose.pluralize(null)

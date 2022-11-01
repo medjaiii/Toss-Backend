@@ -20,7 +20,7 @@ const jobSchema = new Mongoose.Schema(
         startDuration:{type:String},
         endDuration:{type:String},
     },
-    job_images:{ type: Mongoose.Schema.Types.ObjectId,ref :"PromoterProfileImages"},
+    job_images:{ type: String},
     posted_by:{type: Mongoose.Schema.Types.ObjectId,ref:"PromoterSignUp"},
     payment:{type:Number,default:500},
     createdDate:{

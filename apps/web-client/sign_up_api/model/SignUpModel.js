@@ -16,7 +16,7 @@ const signupSchema = new Mongoose.Schema(
       required: [false, "current location required"],
     },
     password: { type: String, required: [true, "password requred"] },
-
+    job_images:{ type: Mongoose.Schema.Types.ObjectId,ref :"PromoterProfileImages"},
     createdDate:{
       type:Date,
       default:Date.now

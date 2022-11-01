@@ -46,26 +46,18 @@ UserProfileRouter.post("/addProfile",isAuth,uploadFile,
 );
 
 UserProfileRouter.patch(
-  "/editProfile/:id",isAuth,uploadFile,
+  "/editProfile/:id",uploadFile,
   expressAsyncHandler(async (req, res,next) => {
     const id = req.params.id;
-      
-    await ProfileModel.findByIdAndUpdate(id,req.body,{useFindAndModify: false},option)
+    console.log(req.body)
+    await ProfileModel.findByIdAndUpdate({_id:id},req.body,option)
     .then(data=>{
-        if(!data){
-            res.status(404).send({
-                message:"Cannot Update"
-            })
-        }else{
-            res.status(200).send({message:`Success. Updated ID is ${id}`})
-        }
+      res.send("saved")
     })
-    .catch(err=>{
-        res.status(500).send({
-            messag:"Some Error Occured"
-        })
+    .catch((err)=>{
+      res.send(err)
     })
-    
+
     
   })
 );
@@ -90,7 +82,7 @@ UserProfileRouter.put(
   })
 );
 
-UserProfileRouter.get(
+UserProfileRouter.delete(
   "/delete/:id",uploadFile,
   expressAsyncHandler(async (req, res,next) => {
     const id = req.params.id;
@@ -114,6 +106,18 @@ UserProfileRouter.get(
   
   })
 );
+
+UserProfileRouter.get("/userprofile",uploadFile,expressAsyncHandler(async(req,res,next)=>{
+
+  console.log(req.body.contactNumber)
+
+  const IDmodel = await ProfileModel.findOne({contactNumber:req.body.contactNumber})
+  const getImages = await UserProfileImages.findById(IDmodel.profileImages)
+
+  const userProfile = Object.assign( IDmodel,{profileImages:getImages})
+  res.status(200).send(userProfile)
+
+}))
 
 
 export default UserProfileRouter;

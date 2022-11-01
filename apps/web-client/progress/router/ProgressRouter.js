@@ -1,7 +1,9 @@
 import express from "express";
 import expressAsyncHandler from "express-async-handler";
 import uploadFile from "../../../../Multer_config.js";
+import AppliedModel from "../../job/model/AppliedModel.js";
 import Jobmodel from "../../job/model/JobModel.js";
+import UserProfileImages from "../../profile/model/UserImages.js";
 import ProfileModel from "../../profile/model/UserProfile.js";
 import PromoterProfileImages from "../../sign_up_api/model/PromoterImagesModel.js";
 import SignUpModel from "../../sign_up_api/model/SignUpModel.js";
@@ -19,19 +21,21 @@ Progressrouter.post(
       email: req.user.email,
     });
 
-    const finalData = Object.assign(req.body, {
-      applied_by: getloggedInUser._id,
+    const Job = await Jobmodel.findById(req.body.Extension.jobs)
+
+    const extenObject = Object.assign(req.body.Extension, {
+      user_by: getloggedInUser._id,job_status:"Applied",posted_by:Job.posted_by,price:Job.payment
     });
 
-    const saveProgess = new ProgressModel(finalData);
-    saveProgess
-      .save()
-      .then((data) => {
-        res.status(200).send(data);
-      })
-      .catch((err) => {
-        res.status(400).send("Bad Request");
-      });
+    const applied = new AppliedModel(extenObject);
+    applied.save()
+    .then((data) => {
+      res.status(200).send(data);
+    })
+    .catch((err) => {
+      res.status(400).send("Bad Request");
+    });
+
   })
 );
 
@@ -39,17 +43,24 @@ Progressrouter.put(
   "/editJobStatus",
   isAuth,
   expressAsyncHandler(async (req, res) => {
-    
-    const {object_id,job_id,status} = req.body
+    const { object_id, status } = req.body;
 
-    const saveProgess = await ProgressModel.updateOne({_id:object_id,"job_code.job_name":job_id},
-    
-    {'$set': {
-      'job_code.$.status': status,
-  }},{"multi":true})
+    const saveProgess = await AppliedModel.updateOne({_id:object_id},{
+      
+      $set:{
+        job_status:status}
+      })
+    //   { _id: object_id, "job_code.job_name": job_id },
 
-  res.status(200).send(saveProgess)
+    //   {
+    //     $set: {
+    //       "job_code.$.status": status,
+    //     },
+    //   },
+    //   { multi: true }
+    // );
 
+    res.status(200).send(saveProgess);
   })
 );
 
@@ -57,83 +68,70 @@ Progressrouter.get(
   "/jobstatus",
   isAuth,
   expressAsyncHandler(async (req, res) => {
-    
+
     const getloggedInUser = await SignUpModel.findOne({
       email: req.user.email,
     });
 
-    const jobmodel = await ProgressModel.find({
-      applied_by: getloggedInUser._id,
-    });
+    const dta = await AppliedModel.find({user_by:getloggedInUser._id})
 
-    const myData = []
-    for (let i= 0;i<jobmodel.length;i++){
-      let job_code = jobmodel[i].job_code
-      for(let jobdata of job_code){
-        myData.push(jobdata)
+    const findalData = await Promise.all(dta.map(async(dtaa)=>{
+
+      const job = await Jobmodel.findById(dtaa.jobs)
+      return {
+        job,
+        status:dtaa.job_status
       }
-    }
-    const xData = []
 
-    for(let i = 0;i<myData.length;i++){
-      const ob = {}
-      const name = myData[i].job_name
-      const figure = await Jobmodel.findById(name)
-      const queryKey = await PromoterProfileImages.findById(figure.job_images);
-      ob.data = figure
-      ob.status = myData[i].status
-      ob.image = queryKey
-      xData.push(ob)
-    }
+    }))
 
-    res.status(200).send(xData);
+
+    res.status(200).send(findalData);
   })
 );
-
 
 Progressrouter.get(
-  "/promoterjobstatus",
+  "/allpromoterjobs",
   isAuth,
   expressAsyncHandler(async (req, res) => {
-    const ProgressData = await ProgressModel.find();
-    const newData = await Promise.all( 
-      
-      ProgressData.map(async ({job_code,applied_by})=>{
-      
-      const singupModel = await SignUpModel.findById(applied_by)
-      const {phoneNumber} = singupModel
-
-      return {
-        x : job_code,
-        phoneNumber
-        
-      }
-    }
-    )
-    )
-    const getProfileDetails = await ProfileModel.find({contactNumber:phoneNumber})
-    console.log(getProfileDetails)
-    
-    const xData = []
-  
-    // for(let i = 0;i<myData.length;i++){
-    //   const ob = {}
-    //   const name = myData[i].job_name
-    //   if(figure.length>0){
-    //   const figure = await Jobmodel.find({_id:name,posted_by:req.user._id})
-
-    //     const queryKey = await PromoterProfileImages.findById(figure.job_images);
-    //     ob.data = figure
-    //     ob.status = myData[i].status
-    //     ob.image = queryKey
-    //     xData.push(ob)
-    //   }
-      
-    // }
-
-    res.status(200).send(newData);
+    const PromoterAllJobs = await Jobmodel.find({ posted_by: req.user._id });
+    res.status(200).send(PromoterAllJobs);
   })
 );
 
+Progressrouter.get(
+  "/promoterappliedStatus",
+  isAuth,
+  expressAsyncHandler(async (req, res) => {
+    const Allied_Data = await AppliedModel.find({ jobs: req.body.jobid });
+
+
+    const arrX = await Promise.all(
+      Allied_Data.map(async (data) => {
+        const news = await SignUpModel.findById(data.user_by);
+        return {
+          news,
+        };
+      })
+    );
+
+    res.send(arrX);
+  })
+);
+
+Progressrouter.get(
+  "/totalearning",
+  isAuth,
+  expressAsyncHandler(async (req, res) => {
+    const data = await (await AppliedModel.find({posted_by:req.user._id}).where({job_status:"Completed"}).select("price")).length
+    const count = await (await AppliedModel.find({posted_by:req.user._id}).where({job_status:"Completed"}).select("price")).length
+    let sum = 0
+    for (let i = 0;i<data.length;i++){
+      sum +=  parseInt(data[i].price)
+    }
+
+    res.status(200).send("Sum= "+sum+" ~count= "+count)
+  })
+);
 
 export default Progressrouter;

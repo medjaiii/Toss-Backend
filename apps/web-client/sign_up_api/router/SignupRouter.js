@@ -1,20 +1,34 @@
 import bcrypt from "bcryptjs";
 import express from "express";
 import expressAsyncHandler from "express-async-handler";
+import uploadFile from "../../../../Multer_config.js";
 import { generateToken } from "../../util.js";
+import PromoterProfileImages from "../model/PromoterImagesModel.js";
 import SignUpModel from "../model/SignUpModel.js";
 
 const SignUpRouter = express.Router();
 
 SignUpRouter.post(
   "/signup",
+  uploadFile,
   expressAsyncHandler(async (req, res) => {
+    const images = req.files.reduce(
+      (acc, image) => [...acc, { name: image.location }],
+      []
+    );
+    const userImages = new PromoterProfileImages({
+      promoterImages: images,
+    });
+
+    const getId = (await userImages.save())._id;
+
     const User = new SignUpModel({
         name: req.body.name,
         email: req.body.email,
         phoneNumber:  req.body.phoneNumber,
         currentLocation: req.body.currentLocation,
         password: bcrypt.hashSync(req.body.password, 8),
+        job_images: getId
     });
 
     const createdUser = await User.save()
