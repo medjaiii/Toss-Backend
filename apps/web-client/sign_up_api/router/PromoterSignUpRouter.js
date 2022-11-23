@@ -44,8 +44,11 @@ PromoterSignup.post("/signin",expressAsyncHandler(async(req,res,next)=>{
   const findUser = await PromoterSignUpModel.findOne({work_email:req.body.email})
   if(findUser){
     if(bcrypt.compareSync(req.body.password,findUser.password)){
+      const imageLink = await PromoterProfileImages.findById(findUser.job_images)
+      const updatedUser = Object.assign(findUser,{job_images:imageLink})
+
       res.status(200).send({
-        _id:findUser._id,
+        updatedUser,
         token:generateToken(findUser)
       })
       return
