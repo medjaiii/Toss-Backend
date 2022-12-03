@@ -107,11 +107,9 @@ UserProfileRouter.delete(
   })
 );
 
-UserProfileRouter.get("/userprofile",uploadFile,expressAsyncHandler(async(req,res,next)=>{
+UserProfileRouter.get("/userprofile",isAuth,uploadFile,expressAsyncHandler(async(req,res,next)=>{
 
-  console.log(req.body.contactNumber)
-
-  const IDmodel = await ProfileModel.findOne({contactNumber:req.body.contactNumber})
+  const IDmodel = await ProfileModel.findOne({contactNumber:req.user.phoneNumber})
   const getImages = await UserProfileImages.findById(IDmodel.profileImages)
 
   const userProfile = Object.assign( IDmodel,{profileImages:getImages})
