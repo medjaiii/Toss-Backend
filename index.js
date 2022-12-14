@@ -6,6 +6,7 @@ import UserProfileRouter from "./apps/web-client/profile/router/ProfileRouter.js
 import PromoterSignup from "./apps/web-client/sign_up_api/router/PromoterSignUpRouter.js"
 import Jobrouter from "./apps/web-client/job/router/JobRouter.js"
 import Progressrouter from "./apps/web-client/progress/router/ProgressRouter.js"
+import SmsRouter from "./apps/web-client/sms/TwiliioApi.js"
 
 dotenv.config()
 
@@ -25,11 +26,12 @@ app.use("/api/userProfile",UserProfileRouter)
 app.use("/api/promoter",PromoterSignup)
 app.use("/api/job",Jobrouter)
 app.use("/api/status",Progressrouter)
-app.use((err,req,res,next)=>{
-    console.log()
-    res.status(500).send({message:err.message,field:err.field})
-    next()
-})
+app.use("/api/sms",SmsRouter)
+// app.use((err,req,res,next)=>{
+//     console.log()
+//     res.status(500).send({message:err.message,field:err.field})
+//     next()
+// })
 
 //all port configuration
 const port  = process.env.PORT || 5000
