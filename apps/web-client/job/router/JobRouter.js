@@ -2,14 +2,14 @@ import express from "express";
 import expressAsyncHandler from "express-async-handler";
 import Jobmodel from "../model/JobModel.js";
 import uploadFile from "../../../../Multer_config.js";
-import { isAuth } from "../../util.js";
+import { isAuth, isPromoterAuth } from "../../util.js";
 import AppliedModel from "../model/AppliedModel.js";
 
 const Jobrouter = express.Router();
 
 Jobrouter.post(
   "/new",
-  isAuth,
+  isPromoterAuth,
   uploadFile,
   expressAsyncHandler(async (req, res) => {
     
@@ -35,7 +35,6 @@ Jobrouter.get(
   isAuth,
   expressAsyncHandler(async (req, res, next) => {
 
-
     const getAppliedJobs = await AppliedModel.find({"user_by":req.user._id})
     if(getAppliedJobs.length>0){
       const getarr = getAppliedJobs.map((data)=>data.jobs)
@@ -52,7 +51,7 @@ Jobrouter.get(
 
 Jobrouter.get(
   "/promoterjobs",
-  isAuth,
+  isPromoterAuth,
   expressAsyncHandler(async (req, res, next) => {
 
     const getalljobs = await Jobmodel.find({posted_by:req.user._id});

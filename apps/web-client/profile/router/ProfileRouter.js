@@ -4,7 +4,7 @@ import ProfileModel from "../model/UserProfile.js";
 import uploadFile from "../../../../Multer_config.js";
 import UserProfileImages from "../model/UserImages.js";
 import { option } from "../../../../DataBaseConstants.js";
-import { isAuth } from "../../util.js";
+import { isAuth, isPromoterAuth } from "../../util.js";
 
 
 const UserProfileRouter = express.Router();
@@ -108,9 +108,49 @@ UserProfileRouter.delete(
 );
 
 UserProfileRouter.get("/userprofile",isAuth,uploadFile,expressAsyncHandler(async(req,res,next)=>{
+  try {
+    
+    var IDmodel = await ProfileModel.findOne({contactNumber:req.user.phoneNumber})
+  } catch (error) {
+    var IDmodel = "No profile is created. Please create one first."
+  }
 
-  const IDmodel = await ProfileModel.findOne({contactNumber:req.user.phoneNumber})
-  const getImages = await UserProfileImages.findById(IDmodel.profileImages)
+  try {
+    var getImages = await UserProfileImages.findById(IDmodel.profileImages)
+    
+  } catch (error) {
+    var getImages = "no images"
+  }
+
+  if(IDmodel===null ||IDmodel===undefined ){
+    var IDmodel = "No profile is created. Please create one first."
+  }
+
+
+  const userProfile = Object.assign( IDmodel,{profileImages:getImages})
+  res.status(200).send(userProfile)
+
+}))
+
+UserProfileRouter.get("/getuserprofileforpromoter",isPromoterAuth,uploadFile,expressAsyncHandler(async(req,res,next)=>{
+
+  try {
+    
+    var IDmodel = await ProfileModel.findOne({contactNumber:req.body.number})
+  } catch (error) {
+    var IDmodel = "No profile is created. Please create one first."
+  }
+  
+  try {
+    var getImages = await UserProfileImages.findById(IDmodel.profileImages)
+    
+  } catch (error) {
+    var getImages = "no images"
+  }
+
+  if(IDmodel===null ||IDmodel===undefined ){
+    var IDmodel = "No profile is created. Please create one first."
+  }
 
   const userProfile = Object.assign( IDmodel,{profileImages:getImages})
   res.status(200).send(userProfile)

@@ -7,7 +7,7 @@ import UserProfileImages from "../../profile/model/UserImages.js";
 import ProfileModel from "../../profile/model/UserProfile.js";
 import PromoterProfileImages from "../../sign_up_api/model/PromoterImagesModel.js";
 import SignUpModel from "../../sign_up_api/model/SignUpModel.js";
-import { isAuth } from "../../util.js";
+import { isAuth, isPromoterAuth } from "../../util.js";
 import ProgressModel from "../model/ProgressModel.js";
 
 const Progressrouter = express.Router();
@@ -41,7 +41,7 @@ Progressrouter.post(
 
 Progressrouter.put(
   "/editJobStatus",
-  isAuth,
+  isPromoterAuth,
   expressAsyncHandler(async (req, res) => {
     const { object_id, status } = req.body;
 
@@ -92,7 +92,7 @@ Progressrouter.get(
 
 Progressrouter.get(
   "/allpromoterjobs",
-  isAuth,
+  isPromoterAuth,
   expressAsyncHandler(async (req, res) => {
     const PromoterAllJobs = await Jobmodel.find({ posted_by: req.user._id });
     res.status(200).send(PromoterAllJobs);
@@ -101,11 +101,9 @@ Progressrouter.get(
 
 Progressrouter.get(
   "/promoterappliedStatus",
-  isAuth,
+  isPromoterAuth,
   expressAsyncHandler(async (req, res) => {
     const Allied_Data = await AppliedModel.find({ jobs: req.body.jobid });
-
-
     const arrX = await Promise.all(
       Allied_Data.map(async (data) => {
         const news = await SignUpModel.findById(data.user_by);
@@ -121,7 +119,7 @@ Progressrouter.get(
 
 Progressrouter.get(
   "/totalearning",
-  isAuth,
+  isPromoterAuth,
   expressAsyncHandler(async (req, res) => {
     const data = await (await AppliedModel.find({posted_by:req.user._id}).where({job_status:"Completed"}).select("price")).length
     const count = await (await AppliedModel.find({posted_by:req.user._id}).where({job_status:"Completed"}).select("price")).length
