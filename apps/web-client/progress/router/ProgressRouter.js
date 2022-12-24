@@ -100,15 +100,36 @@ Progressrouter.get(
 );
 
 Progressrouter.get(
-  "/promoterappliedStatus",
+  "/promoterAppliedJobsByUser",
   isPromoterAuth,
   expressAsyncHandler(async (req, res) => {
-    const Allied_Data = await AppliedModel.find({ jobs: req.body.jobid });
+    const Allied_Data = await AppliedModel.find({ jobs: req.body.jobid,posted_by:req.user._id });
     const arrX = await Promise.all(
       Allied_Data.map(async (data) => {
-        const news = await SignUpModel.findById(data.user_by);
+        const SignUpDetails = await SignUpModel.findById(data.user_by);
+        try {
+    
+          var IDmodel = await ProfileModel.findOne({contactNumber:SignUpDetails.phoneNumber})
+        } catch (error) {
+          var IDmodel = "No profile is created. Please create one first."
+        }
+        
+        try {
+          var getImages = await UserProfileImages.findById(IDmodel.profileImages)
+          
+        } catch (error) {
+          var getImages = "no images"
+        }
+      
+        if(IDmodel===null ||IDmodel===undefined ){
+          var IDmodel = "No profile is created. Please create one first."
+        }
+      
+        const userProfile = Object.assign( IDmodel,{profileImages:getImages})
+        
         return {
-          news,
+          SignUpDetails,
+          userProfile
         };
       })
     );
@@ -116,6 +137,26 @@ Progressrouter.get(
     res.send(arrX);
   })
 );
+
+Progressrouter.get(
+  "/promoterAllJobsStatus",
+  isPromoterAuth,
+  expressAsyncHandler(async (req, res) => {
+    console.log(req.user._id)
+    const postedBY = await AppliedModel.find({posted_by:req.user._id})
+    
+    const findalData = await Promise.all(postedBY.map(async(dtaa)=>{
+
+      const job = await Jobmodel.findById(dtaa.jobs)
+      return {
+        job,
+        status:dtaa.job_status
+      }
+
+    })
+    );
+    res.send(findalData);
+  }))
 
 Progressrouter.get(
   "/totalearning",
