@@ -5,6 +5,24 @@ import uploadFile from "../../../../Multer_config.js";
 import { generateToken } from "../../util.js";
 import PromoterProfileImages from "../model/PromoterImagesModel.js";
 import SignUpModel from "../model/SignUpModel.js";
+import { createRequire } from "module";
+import dotenv from "dotenv"
+
+dotenv.config()
+
+
+const require = createRequire(import.meta.url);
+var Twilio = require("twilio");
+let TWILIO_ACCOUNT_SID = process.env.TWILIO_ACCOUNT_SID;
+let TWILIO_AUTH_TOKEN = process.env.TWILIO_AUTH_TOKEN
+let TWILIO_PHONE_NUMBER = process.env.TWILIO_PHONE_NUMBER
+let SERVICE_SID = process.env.SERVICE_SID
+
+const accountSid = TWILIO_ACCOUNT_SID;
+
+const authToken = TWILIO_AUTH_TOKEN;
+
+const client = new Twilio(accountSid, authToken);
 
 const SignUpRouter = express.Router();
 
@@ -30,14 +48,22 @@ SignUpRouter.post(
         password: bcrypt.hashSync(req.body.password, 8),
         job_images: getId
     });
-
+ 
     const createdUser = await User.save()
+
+    const otpRes = await client.verify
+    .services(SERVICE_SID)
+    .verifications.create({
+      to: `+${91}${req.body.phoneNumber}`,
+      channel: "sms",
+    });
 
     res.status(200).send({
         _id:createdUser.id,
         name:createdUser.name,
         token :generateToken(createdUser),
-        "message":"User Created Successfully"
+        "message":`User Entries Saved in Database. OTP Code Sent ! ${JSON.stringify(otpRes)}`
+
     })
 
   })
