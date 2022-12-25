@@ -23,7 +23,7 @@ Progressrouter.post(
 
     const Job = await Jobmodel.findById(req.body.Extension.jobs)
     if(Job.job_status==="Disable"){
-      res.status(500).send({"message":"You Cannot Apply on Closed Job."})
+      res.status(400).send({"message":"You Cannot Apply on Closed Job."})
     }else{
 
       const extenObject = Object.assign(req.body.Extension, {

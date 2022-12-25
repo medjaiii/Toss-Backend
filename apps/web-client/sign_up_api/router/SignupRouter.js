@@ -110,16 +110,16 @@ SignUpRouter.post("/signin",expressAsyncHandler(async (req,res)=>{
         })
 
       }else{
-        res.status(500).send({
+        res.status(400).send({
           "message":"User is not Verified. Please Verify"
         })
       }
       
     }else{
-      res.status(500).send({"message":"Password Do not Match"})
+      res.status(400).send({"message":"Password Do not Match"})
     }
   }else{
-    res.status(404).send({message:"Invalid Email or password"})
+    res.status(400).send({message:"Invalid Email or password"})
   }
 
 })

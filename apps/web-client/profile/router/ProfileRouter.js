@@ -76,7 +76,7 @@ UserProfileRouter.put(
       res.status(200).json(data)
     })
     .catch((err)=>{
-      res.status(500).json({"message":err})
+      res.status(400).json({"message":err})
     })
     
   })
@@ -93,7 +93,7 @@ UserProfileRouter.delete(
         res.send(resu)
     })
     .catch((err)=>{
-      res.status(500).json({
+      res.status(400).json({
         message:err
       })
     })

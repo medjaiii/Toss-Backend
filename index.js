@@ -33,7 +33,7 @@ app.use("/api/email",EmailRouter)
 
 app.use((err,req,res,next)=>{
     console.log(err)
-    res.status(500).send({message:err.message,field:err.field})
+    res.status(400).send({message:err.message,field:err.field})
     next()
 })
 

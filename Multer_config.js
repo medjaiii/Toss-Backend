@@ -26,7 +26,7 @@ const uploadFile = (req,res,next)=>{
             })
         }
         if(err){
-            return res.status(500).json({
+            return res.status(400).json({
                 message:'Error Occured',
                 errorMessage:err.message
             })

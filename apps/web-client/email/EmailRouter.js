@@ -32,7 +32,7 @@ EmailRouter.get(
       if(err)
           console.log(err)
       else
-          res.status(500).send({"message":"Link Sent"})
+          res.status(400).send({"message":"Link Sent"})
     })
     
   })
@@ -51,12 +51,12 @@ EmailRouter.post(
     const findUser = await SignUpModel.exists({email:req.body.email})
     if(findUser){
       if(req.body.password !== req.body.confirm_password){
-        res.status(500).send({"message":"Password do not match"})
+        res.status(400).send({"message":"Password do not match"})
       }else{
         
         await SignUpModel.findOneAndUpdate({"email":req.body.email},{"password":bcrypt.hashSync(req.body.password, 8),}).exec(function(err,mess){
           if(err){
-            res.status(500).send({"message":err})
+            res.status(400).send({"message":err})
           }else{
             res.status(200).send({"message":"Password Updated Successfully"})
           }

@@ -25,7 +25,7 @@ Jobrouter.post(
         });
       })
       .catch((err) => {
-        res.status(500).json({ message: err });
+        res.status(400).json({ message: err });
       });
   })
 );
@@ -57,7 +57,7 @@ Jobrouter.post(
 
     await Jobmodel.findByIdAndUpdate({_id:req.body.jobID,posted_by:req.user._id},{"job_status":"Disable"}).exec(function(err,dta){
       if(err){
-        res.status(500).send("Error While Closing job")
+        res.status(400).send("Error While Closing job")
       }else{
 
         res.status(200).send({"message":"Job Closed Successfully"});
