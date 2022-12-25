@@ -27,6 +27,7 @@ const jobSchema = new Mongoose.Schema(
       type:Date,
       default:Date.now
     },
+    job_status:{type:String,default:"OPEN"}
   },
   {
     timestamps: true,

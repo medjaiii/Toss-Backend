@@ -1,6 +1,7 @@
 import express from "express";
 import { createRequire } from "module";
 import dotenv from "dotenv"
+import SignUpModel from "../sign_up_api/model/SignUpModel.js";
 
 dotenv.config()
 
@@ -39,22 +40,30 @@ SmsRouter.post("/sendsms", async (req, res) => {
   });
 });
 
-SmsRouter.post("/verify", (req, res) => {
+SmsRouter.post("/verify", async (req, res) => {
   // const number = Math.floor(100000 + Math.random() * 900000)
   const { phone, otp } = req.body;
 
   // const welcomeMessage = `Welcome! Your verification code is ${number}`;
 
-  client.verify
+  await client.verify
     .services(SERVICE_SID)
     .verificationChecks.create({
       to: `+${91}${phone}`,
       code: otp,
     })
 
-    .then((data) => {
-      console.log(data.status);
+    .then(async (data) => {
+      console.log(data);
       if (data.status === "approved") {
+        await SignUpModel.findOneAndUpdate({phoneNumber:data.to.slice(3,13)},{"isVerified":true}).exec(function(err,dta){
+          if(err){
+            console.log(err)
+          }else{
+            console.log(dta)
+          }
+        })
+
         res.status(200).send({
           message: `Otp Verfied Successfully `,
         });

@@ -27,8 +27,9 @@ app.use("/api/promoter",PromoterSignup)
 app.use("/api/job",Jobrouter)
 app.use("/api/status",Progressrouter)
 app.use("/api/sms",SmsRouter)
+
 app.use((err,req,res,next)=>{
-    console.log()
+    console.log(err)
     res.status(500).send({message:err.message,field:err.field})
     next()
 })

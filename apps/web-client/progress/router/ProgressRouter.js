@@ -22,19 +22,23 @@ Progressrouter.post(
     });
 
     const Job = await Jobmodel.findById(req.body.Extension.jobs)
+    if(Job.job_status==="Disable"){
+      res.status(500).send({"message":"You Cannot Apply on Closed Job."})
+    }else{
 
-    const extenObject = Object.assign(req.body.Extension, {
-      user_by: getloggedInUser._id,job_status:"Applied",posted_by:Job.posted_by,price:Job.payment
-    });
-
-    const applied = new AppliedModel(extenObject);
-    applied.save()
-    .then((data) => {
-      res.status(200).send(data);
-    })
-    .catch((err) => {
-      res.status(400).send("Bad Request");
-    });
+      const extenObject = Object.assign(req.body.Extension, {
+        user_by: getloggedInUser._id,job_status:"Applied",posted_by:Job.posted_by,price:Job.payment
+      });
+  
+      const applied = new AppliedModel(extenObject);
+      applied.save()
+      .then((data) => {
+        res.status(200).send(data);
+      })
+      .catch((err) => {
+        res.status(400).send("Bad Request");
+      });
+    }
 
   })
 );
@@ -94,12 +98,12 @@ Progressrouter.get(
   "/allpromoterjobs",
   isPromoterAuth,
   expressAsyncHandler(async (req, res) => {
-    const PromoterAllJobs = await Jobmodel.find({ posted_by: req.user._id });
+    const PromoterAllJobs = await Jobmodel.find({ posted_by: req.user._id, job_status:{$ne:"Disable"}});
     res.status(200).send(PromoterAllJobs);
   })
 );
 
-Progressrouter.get(
+Progressrouter.post(
   "/promoterAppliedJobsByUser",
   isPromoterAuth,
   expressAsyncHandler(async (req, res) => {

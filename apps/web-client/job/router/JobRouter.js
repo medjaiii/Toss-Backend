@@ -38,27 +38,33 @@ Jobrouter.get(
     const getAppliedJobs = await AppliedModel.find({"user_by":req.user._id})
     if(getAppliedJobs.length>0){
       const getarr = getAppliedJobs.map((data)=>data.jobs)
-      const getalljobs = await Jobmodel.find({"_id":{$in:getarr}});
+      console.log(getarr)
+      const getalljobs = await Jobmodel.find({_id:{"$nin":getarr}})
       res.status(200).send(getalljobs);
     }else{
-      const getalljobs = await Jobmodel.find();
+      const getalljobs = await Jobmodel.find({job_status:{$ne:"Disable"}});
       res.status(200).send(getalljobs);
     }
 
-
   })
 );
 
-Jobrouter.get(
-  "/promoterjobs",
+//close job
+Jobrouter.post(
+  "/closeJob",
   isPromoterAuth,
   expressAsyncHandler(async (req, res, next) => {
 
-    const getalljobs = await Jobmodel.find({posted_by:req.user._id});
+    await Jobmodel.findByIdAndUpdate({_id:req.body.jobID,posted_by:req.user._id},{"job_status":"Disable"}).exec(function(err,dta){
+      if(err){
+        res.status(500).send("Error While Closing job")
+      }else{
 
-    res.status(200).send(getalljobs);
+        res.status(200).send({"message":"Job Closed Successfully"});
+      }
+    })
+
   })
 );
-
 
 export default Jobrouter;

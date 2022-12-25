@@ -21,6 +21,7 @@ const signupSchema = new Mongoose.Schema(
       type:Date,
       default:Date.now
     },
+    isVerified:{type:String,default:false},
   },
   {
     timestamps: true,

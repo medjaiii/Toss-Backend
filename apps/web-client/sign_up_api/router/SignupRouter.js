@@ -48,23 +48,48 @@ SignUpRouter.post(
         password: bcrypt.hashSync(req.body.password, 8),
         job_images: getId
     });
- 
-    const createdUser = await User.save()
 
-    const otpRes = await client.verify
-    .services(SERVICE_SID)
-    .verifications.create({
-      to: `+${91}${req.body.phoneNumber}`,
-      channel: "sms",
-    });
-
-    res.status(200).send({
-        _id:createdUser.id,
-        name:createdUser.name,
-        token :generateToken(createdUser),
-        "message":`User Entries Saved in Database. OTP Code Sent ! ${JSON.stringify(otpRes)}`
-
-    })
+    const getUserData = await SignUpModel.exists({email:req.body.email})
+    if (getUserData){
+      const findUser = await SignUpModel.findOne({_id:getUserData._id})
+      const getVerifiedStatus = findUser.isVerified
+      console.log(getVerifiedStatus)
+      if(getVerifiedStatus===true){
+        const imageLink = await PromoterProfileImages.findById(findUser.job_images)
+        const updatedUser = Object.assign(findUser,{job_images:imageLink})
+        res.status(200).send({
+          updatedUser,
+          token:generateToken(findUser)
+        })        
+      }else{
+        await client.verify
+        .services(SERVICE_SID)
+        .verifications.create({
+          to: `+${91}${req.body.phoneNumber}`,
+          channel: "sms",
+        });
+        
+        await SignUpModel.findOneAndUpdate({_id:getUserData._id},{"$set":{"name":req.body.name,"email": req.body.email,"phoneNumber":  req.body.phoneNumber,"currentLocation": req.body.currentLocation,'password': bcrypt.hashSync(req.body.password, 8),"job_images": getId
+      }}).exec(function(err,user){
+        console.log(user)
+      })
+        res.status(200).send({
+            "message":`User is not verfied. OTP Code Sent!`
+        })       
+      }  
+    }else{
+      await User.save()
+      await client.verify
+      .services(SERVICE_SID)
+      .verifications.create({
+        to: `+${91}${req.body.phoneNumber}`,
+        channel: "sms",
+      });
+  
+      res.status(200).send({
+          "message":`User Does Not Exists. OTP Code Sent!`  
+      })
+    }
 
   })
 );
@@ -75,16 +100,26 @@ SignUpRouter.post("/signin",expressAsyncHandler(async (req,res)=>{
   const findUser = await SignUpModel.findOne({email:req.body.email})
   if(findUser){
     if(bcrypt.compareSync(req.body.password,findUser.password)){
-      const imageLink = await PromoterProfileImages.findById(findUser.job_images)
-      const updatedUser = Object.assign(findUser,{job_images:imageLink})
-      res.status(200).send({
-        updatedUser,
-        token:generateToken(findUser)
-      })
-      return
+      console.log(findUser.isVerified==="true")
+      if(findUser.isVerified==="true"){
+        const imageLink = await PromoterProfileImages.findById(findUser.job_images)
+        const updatedUser = Object.assign(findUser,{job_images:imageLink})
+        res.status(200).send({
+          updatedUser,
+          token:generateToken(findUser)
+        })
+
+      }else{
+        res.status(500).send({
+          "message":"User is not Verified. Please Verify"
+        })
+      }
+      
     }
+  }else{
+
+    res.status(404).send({message:"Invalid Email or password"})
   }
-  res.status(404).send({message:"Invalid Email or password"})
 
 })
 )
