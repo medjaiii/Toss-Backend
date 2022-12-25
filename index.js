@@ -7,12 +7,14 @@ import PromoterSignup from "./apps/web-client/sign_up_api/router/PromoterSignUpR
 import Jobrouter from "./apps/web-client/job/router/JobRouter.js"
 import Progressrouter from "./apps/web-client/progress/router/ProgressRouter.js"
 import SmsRouter from "./apps/web-client/sms/TwiliioApi.js"
+import EmailRouter from "./apps/web-client/email/EmailRouter.js"
 
 dotenv.config()
 
 const app = express()
 
 app.use(express.json())
+app.set('view engine','ejs');
 app.use(express.urlencoded({extended:true}))
 
 mongoose.connect(process.env.MONGODB_URL || 'mongodb://localhost/naukridb',{
@@ -27,6 +29,7 @@ app.use("/api/promoter",PromoterSignup)
 app.use("/api/job",Jobrouter)
 app.use("/api/status",Progressrouter)
 app.use("/api/sms",SmsRouter)
+app.use("/api/email",EmailRouter)
 
 app.use((err,req,res,next)=>{
     console.log(err)

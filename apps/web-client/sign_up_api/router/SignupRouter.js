@@ -53,8 +53,8 @@ SignUpRouter.post(
     if (getUserData){
       const findUser = await SignUpModel.findOne({_id:getUserData._id})
       const getVerifiedStatus = findUser.isVerified
-      console.log(getVerifiedStatus)
-      if(getVerifiedStatus===true){
+      
+      if(getVerifiedStatus==="true"){
         const imageLink = await PromoterProfileImages.findById(findUser.job_images)
         const updatedUser = Object.assign(findUser,{job_images:imageLink})
         res.status(200).send({
@@ -115,9 +115,10 @@ SignUpRouter.post("/signin",expressAsyncHandler(async (req,res)=>{
         })
       }
       
+    }else{
+      res.status(500).send({"message":"Password Do not Match"})
     }
   }else{
-
     res.status(404).send({message:"Invalid Email or password"})
   }
 
