@@ -7,6 +7,8 @@ import PromoterProfileImages from "../model/PromoterImagesModel.js";
 import SignUpModel from "../model/SignUpModel.js";
 import { createRequire } from "module";
 import dotenv from "dotenv"
+import ProfileModel from "../../profile/model/UserProfile.js";
+import UserProfileImages from "../../profile/model/UserImages.js";
 
 dotenv.config()
 
@@ -49,6 +51,27 @@ SignUpRouter.post(
         job_images: getId
     });
 
+    const userProfileImages = new UserProfileImages({
+      userProfileImage: images,
+    });
+
+    const getUerId = (await userProfileImages.save())._id;
+
+  
+    const UserProfile = new ProfileModel({
+      fullname: req.body.name,
+      email: req.body.email,
+      area: req.body.currentLocation ? req.body.currentLocation: "",
+      contactNumber: req.body.phoneNumber ? req.body.phoneNumber: "" ,
+      city: req.body.currentLocation ? req.body.currentLocation :"",
+      about: req.body.about ? req.body.about: "" ,
+      previousExpereince: req.body.previousExpereince ? req.body.previousExpereince:"",
+      skills: req.body.skills ? req.body.skills :[],
+      profileImages: getUerId,
+    });
+
+    const saveProfile = await UserProfile.save();
+    
     const getUserData = await SignUpModel.exists({email:req.body.email})
     if (getUserData){
       const findUser = await SignUpModel.findOne({_id:getUserData._id})
@@ -59,6 +82,7 @@ SignUpRouter.post(
         const updatedUser = Object.assign(findUser,{job_images:imageLink})
         res.status(200).send({
           updatedUser,
+          saveProfile,
           token:generateToken(findUser)
         })        
       }else{
