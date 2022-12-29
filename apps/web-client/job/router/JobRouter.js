@@ -38,7 +38,6 @@ Jobrouter.get(
     const getAppliedJobs = await AppliedModel.find({"user_by":req.user._id})
     if(getAppliedJobs.length>0){
       const getarr = getAppliedJobs.map((data)=>data.jobs)
-      console.log(getarr)
       const getalljobs = await Jobmodel.find({_id:{"$nin":getarr}})
       res.status(200).send(getalljobs);
     }else{

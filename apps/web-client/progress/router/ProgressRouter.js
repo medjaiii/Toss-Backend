@@ -21,7 +21,14 @@ Progressrouter.post(
       email: req.user.email,
     });
 
+    const getAppliedJobs = await AppliedModel.find({"user_by":req.user._id},{"jobs":req.body.Extension.jobs})
+    if(getAppliedJobs.length>0){
+      res.status(400).send({"message":"You Cannot Apply on Same Job Again."})
+      return
+    }
+  
     const Job = await Jobmodel.findById(req.body.Extension.jobs)
+
     if(Job.job_status==="Disable"){
       res.status(400).send({"message":"You Cannot Apply on Closed Job."})
     }else{
@@ -36,7 +43,7 @@ Progressrouter.post(
         res.status(200).send(data);
       })
       .catch((err) => {
-        res.status(400).send("Bad Request");
+        res.status(400).send({"message":"Bad Request"});
       });
     }
 
