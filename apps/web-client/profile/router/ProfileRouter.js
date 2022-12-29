@@ -5,6 +5,7 @@ import uploadFile from "../../../../Multer_config.js";
 import UserProfileImages from "../model/UserImages.js";
 import { option } from "../../../../DataBaseConstants.js";
 import { isAuth, isPromoterAuth } from "../../util.js";
+import UserSkillModel from "../model/UserSkills.js";
 
 
 const UserProfileRouter = express.Router();
@@ -66,12 +67,13 @@ UserProfileRouter.put(
   "/editImages/:id",isAuth,uploadFile,
   expressAsyncHandler(async (req, res,next) => {
     const id = req.params.id;
-    
+
     const images = req.files.reduce(
       (acc, image) => [...acc, { name: image.location }],
       []
     );
-    UserProfileImages.findByIdAndUpdate(id,{userProfileImage:images},option)
+    UserProfileImages.findOneAndUpdate(id,{userProfileImage:images},option)
+    // UserProfileImages.findOneAndUpdate({_id:id,"userProfileImage._id":req.body.key},{"$set":{"userProfileImage.$.name":images[0]["name"]}},option)
     .then((data)=>{
       res.status(200).json(data)
     })
@@ -157,5 +159,35 @@ UserProfileRouter.get("/getuserprofileforpromoter",isPromoterAuth,uploadFile,exp
 
 }))
 
+UserProfileRouter.post(
+  "/postSkills",
+  expressAsyncHandler(async (req, res,next) => {
+    const skills = await UserSkillModel({skills:req.body.skills})
+    skills.save()
+    res.send({"message":"Skills Saved"})
+
+  }))
+
+UserProfileRouter.get(
+    "/getSkills",
+    expressAsyncHandler(async (req, res,next) => {
+      const skills = await UserSkillModel.find()
+      res.send({"skills":skills})
+  
+    }))
+
+UserProfileRouter.put(
+    "/updateSkills",
+      expressAsyncHandler(async (req, res,next) => {
+
+        UserSkillModel.findByIdAndUpdate(
+          { _id: "63adfa889440e86de8dac711"},
+          {"$push": { "skills": req.body.skills }}
+        ).exec(function (err, managerparent) {
+           if(err) throw err
+           res.send({"message":"Updatd"})
+        });
+           
+      }))
 
 export default UserProfileRouter;
