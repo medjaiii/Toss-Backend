@@ -2,13 +2,15 @@ import bcrypt from "bcryptjs";
 import express from "express";
 import expressAsyncHandler from "express-async-handler";
 import uploadFile from "../../../../Multer_config.js";
-import { generateToken } from "../../util.js";
+import { generateToken, isAuth } from "../../util.js";
 import PromoterProfileImages from "../model/PromoterImagesModel.js";
 import SignUpModel from "../model/SignUpModel.js";
 import { createRequire } from "module";
 import dotenv from "dotenv"
 import ProfileModel from "../../profile/model/UserProfile.js";
 import UserProfileImages from "../../profile/model/UserImages.js";
+import mongoose from "mongoose"
+import { option } from "../../../../DataBaseConstants.js";
 
 dotenv.config()
 
@@ -57,7 +59,6 @@ SignUpRouter.post(
 
     const getUerId = (await userProfileImages.save())._id;
 
-  
     const UserProfile = new ProfileModel({
       fullname: req.body.name,
       email: req.body.email,
@@ -67,7 +68,6 @@ SignUpRouter.post(
       about: req.body.about ? req.body.about: "" ,
       previousExpereince: req.body.previousExpereince ? req.body.previousExpereince:"",
       skills: req.body.skills ? req.body.skills :[],
-      profileImages: getUerId,
     });
 
     const saveProfile = await UserProfile.save();
@@ -128,6 +128,7 @@ SignUpRouter.post("/signin",expressAsyncHandler(async (req,res)=>{
       if(findUser.isVerified==="true"){
         const imageLink = await PromoterProfileImages.findById(findUser.job_images)
         const updatedUser = Object.assign(findUser,{job_images:imageLink})
+
         res.status(200).send({
           updatedUser,
           token:generateToken(findUser)
@@ -148,6 +149,38 @@ SignUpRouter.post("/signin",expressAsyncHandler(async (req,res)=>{
 
 })
 )
+
+SignUpRouter.delete("/deleteimage/:id",isAuth,expressAsyncHandler(async(req,res)=>{
+  const id = req.params.id
+  const findUser = await SignUpModel.findOne({_id:req.user._id})
+  await PromoterProfileImages.findOneAndUpdate({_id:findUser.job_images},{"$pull":{"promoterImages":{_id:id}}},{safe:true,multi:false})
+  .then((data)=>{
+    res.status(200).json(data)
+  })
+  .catch((err)=>{
+    res.status(400).json({"message":err})
+  })
+}))
+
+SignUpRouter.put(
+  "/editImages",isAuth,uploadFile,
+  expressAsyncHandler(async (req, res,next) => {
+    const images = req.files.reduce(
+      (acc, image) => [...acc, { name: image.location }],
+      []
+    );
+      
+    const findUser = await SignUpModel.findOne({_id:req.user._id})
+      
+    await PromoterProfileImages.findOneAndUpdate({_id:findUser.job_images},{"$push":{promoterImages:images}},option)
+      .then((data)=>{
+        res.status(200).json(data)
+      })
+      .catch((err)=>{
+        res.status(400).json({"message":err})
+      })               
+  })
+);
 
 
 export default SignUpRouter

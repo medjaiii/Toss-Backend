@@ -81,8 +81,6 @@ PromoterSignup.post("/forgotpasswod",expressAsyncHandler(async(req,res,next)=>{
 
 
 PromoterSignup.get("/getpromotersign",isPromoterAuth,expressAsyncHandler(async(req,res,next)=>{
-  console.log("in")
-  console.log(req.user)
   const findUser = await PromoterSignUpModel.findOne({work_email:req.user.email})
   if(findUser){
       const imageLink = await PromoterProfileImages.findById(findUser.job_images)

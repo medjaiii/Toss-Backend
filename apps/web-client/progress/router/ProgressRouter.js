@@ -20,8 +20,8 @@ Progressrouter.post(
     const getloggedInUser = await SignUpModel.findOne({
       email: req.user.email,
     });
-
-    const getAppliedJobs = await AppliedModel.find({"user_by":req.user._id},{"jobs":req.body.Extension.jobs})
+    
+    const getAppliedJobs = await AppliedModel.find({"user_by":req.user._id,"jobs":req.body.Extension.jobs})
     if(getAppliedJobs.length>0){
       res.status(400).send({"message":"You Cannot Apply on Same Job Again."})
       return
@@ -156,15 +156,17 @@ Progressrouter.get(
     console.log(req.user._id)
     const postedBY = await AppliedModel.find({posted_by:req.user._id})
     
-    const findalData = await Promise.all(postedBY.map(async(dtaa)=>{
+    const findalData = await Promise.all(postedBY.map(async(data)=>{
 
-      const job = await Jobmodel.findById(dtaa.jobs)
+      const job = await Jobmodel.findById(data.jobs).lean().exec()
+      const newJob = Object.assign(job,{"status":data.job_status})
+
       return {
-        job,
-        status:dtaa.job_status
+        newJob
       }
 
     })
+
     );
     res.send(findalData);
   }))

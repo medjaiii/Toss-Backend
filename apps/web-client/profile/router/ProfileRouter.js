@@ -64,25 +64,85 @@ UserProfileRouter.patch(
 );
 
 UserProfileRouter.put(
-  "/editImages/:id",isAuth,uploadFile,
+  "/editImages",isAuth,uploadFile,
   expressAsyncHandler(async (req, res,next) => {
-    const id = req.params.id;
-
     const images = req.files.reduce(
       (acc, image) => [...acc, { name: image.location }],
       []
     );
-    UserProfileImages.findOneAndUpdate(id,{userProfileImage:images},option)
+
+    const userProfileImages = new UserProfileImages({
+      userProfileImage: images,
+    });
+
+    const profile = await ProfileModel.findOne({"contactNumber":req.user.phoneNumber}).lean().exec()
+    
+    if(profile.hasOwnProperty('profileImages')===false || profile.hasOwnProperty('profileImages')===null){
+
+      const getUerId = (await userProfileImages.save())._id;
+      await ProfileModel.findOneAndUpdate({contactNumber:req.user.phoneNumber},{profileImages:getUerId},option )
+      .then((data)=>{
+        res.status(200).json(data)
+      })
+      .catch((err)=>{
+        res.status(400).json({"message":err})
+      })
+
+    }else{
+      await UserProfileImages.findOneAndUpdate({_id:profile.profileImages},{"$push":{userProfileImage:images}},option)
+      .then((data)=>{
+        res.status(200).json(data)
+      })
+      .catch((err)=>{
+        res.status(400).json({"message":err})
+      })            
+    }
+    
+    // UserProfileImages.findOneAndUpdate({_id:profile.profileImages},{"$push":{userProfileImage:images}},option)
+    //   .then((data)=>{
+    //     res.status(200).json(data)
+    //   })
+    //   .catch((err)=>{
+    //     res.status(400).json({"message":err})
+    //   })            
+    //   const getUerId = (await userProfileImages.save())._id;
+    //   await ProfileModel.findOneAndUpdate({contactNumber:req.user.phoneNumber},{profileImages:getUerId},option )
+    //   .then((data)=>{
+    //     res.status(200).json(data)
+    //   })
+    //   .catch((err)=>{
+    //     res.status(400).json({"message":err})
+    //   })
+
     // UserProfileImages.findOneAndUpdate({_id:id,"userProfileImage._id":req.body.key},{"$set":{"userProfileImage.$.name":images[0]["name"]}},option)
+
+    // UserProfileImages.findOneAndUpdate(id,{"$push":{userProfileImage:images}},option)
+    // .then((data)=>{
+    //   res.status(200).json(data)
+    // })
+    // .catch((err)=>{
+    //   res.status(400).json({"message":err})
+    // })
+
+    }))
+UserProfileRouter.delete("/deleteImages/:id",isAuth,expressAsyncHandler(async(req,res)=>{
+
+    const id = req.params.id
+
+    const fetchProfile = await ProfileModel.findOne({"contactNumber":req.user.phoneNumber})
+    
+    await UserProfileImages.findOneAndUpdate({_id:fetchProfile.profileImages},{"$pull":{"userProfileImage":{_id:id}}},{safe:true,multi:false})
     .then((data)=>{
       res.status(200).json(data)
     })
     .catch((err)=>{
       res.status(400).json({"message":err})
     })
-    
-  })
-);
+ 
+  
+
+
+}))
 
 UserProfileRouter.delete(
   "/delete/:id",uploadFile,

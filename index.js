@@ -8,11 +8,14 @@ import Jobrouter from "./apps/web-client/job/router/JobRouter.js"
 import Progressrouter from "./apps/web-client/progress/router/ProgressRouter.js"
 import SmsRouter from "./apps/web-client/sms/TwiliioApi.js"
 import EmailRouter from "./apps/web-client/email/EmailRouter.js"
+import AdminSignup from "./apps/web-client/sign_up_api/router/AdminSignup.js"
+import cors from "cors"
 
 dotenv.config()
 
 const app = express()
 
+app.use(cors())
 app.use(express.json())
 app.set('view engine','ejs');
 app.use(express.urlencoded({extended:true}))
@@ -30,6 +33,7 @@ app.use("/api/job",Jobrouter)
 app.use("/api/status",Progressrouter)
 app.use("/api/sms",SmsRouter)
 app.use("/api/email",EmailRouter)
+app.use("/api/admin",AdminSignup)
 
 app.use((err,req,res,next)=>{
     console.log(err)
