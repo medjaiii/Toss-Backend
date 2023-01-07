@@ -6,6 +6,8 @@ import UserProfileImages from "../model/UserImages.js";
 import { option } from "../../../../DataBaseConstants.js";
 import { isAuth, isPromoterAuth } from "../../util.js";
 import UserSkillModel from "../model/UserSkills.js";
+import SignUpModel from "../../sign_up_api/model/SignUpModel.js";
+import PromoterProfileImages from "../../sign_up_api/model/PromoterImagesModel.js";
 
 
 const UserProfileRouter = express.Router();
@@ -172,7 +174,7 @@ UserProfileRouter.delete(
 UserProfileRouter.get("/userprofile",isAuth,uploadFile,expressAsyncHandler(async(req,res,next)=>{
   try {
     
-    var IDmodel = await ProfileModel.findOne({contactNumber:req.user.phoneNumber})
+    var IDmodel = await ProfileModel.findOne({contactNumber:req.user.phoneNumber}).lean().exec()
   } catch (error) {
     var IDmodel = "No profile is created. Please create one first."
   }
@@ -188,9 +190,15 @@ UserProfileRouter.get("/userprofile",isAuth,uploadFile,expressAsyncHandler(async
     var IDmodel = "No profile is created. Please create one first."
   }
 
-
+  const findUser = await SignUpModel.findOne({_id:req.user._id})
+  
+  const imageLink = await PromoterProfileImages.findById(findUser.job_images)
+  
   const userProfile = Object.assign( IDmodel,{profileImages:getImages})
-  res.status(200).send(userProfile)
+  
+  const news = Object.assign(userProfile,{"FrontImage":imageLink})
+  
+  res.status(200).send(news)
 
 }))
 
