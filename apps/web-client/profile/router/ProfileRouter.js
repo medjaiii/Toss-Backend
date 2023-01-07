@@ -196,7 +196,7 @@ UserProfileRouter.get("/userprofile",isAuth,uploadFile,expressAsyncHandler(async
   
   const userProfile = Object.assign( IDmodel,{profileImages:getImages})
   
-  const news = Object.assign(userProfile,{"FrontImage":imageLink})
+  const news = Object.assign(userProfile,{"FrontImage":imageLink.promoterImages})
   
   res.status(200).send(news)
 
