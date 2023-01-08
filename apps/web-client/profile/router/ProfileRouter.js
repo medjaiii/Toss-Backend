@@ -48,12 +48,10 @@ UserProfileRouter.post("/addProfile",isAuth,uploadFile,
   })
 );
 
-UserProfileRouter.patch(
-  "/editProfile/:id",uploadFile,
+UserProfileRouter.put(
+  "/editProfile/",isAuth,uploadFile,
   expressAsyncHandler(async (req, res,next) => {
-    const id = req.params.id;
-    console.log(req.body)
-    await ProfileModel.findByIdAndUpdate({_id:id},req.body,option)
+    await ProfileModel.updateOne({contactNumber:req.user.phoneNumber},req.body,option)
     .then(data=>{
       res.send("saved")
     })
