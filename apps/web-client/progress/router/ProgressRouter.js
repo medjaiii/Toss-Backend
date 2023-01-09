@@ -54,9 +54,9 @@ Progressrouter.put(
   "/editJobStatus",
   isPromoterAuth,
   expressAsyncHandler(async (req, res) => {
-    const { object_id, status } = req.body;
-
-    const saveProgess = await AppliedModel.updateOne({_id:object_id},{
+    const { object_id, status,user_by } = req.body;
+    
+    const saveProgess = await AppliedModel.updateOne({jobs:object_id,user_by:user_by},{
       
       $set:{
         job_status:status}
@@ -115,9 +115,11 @@ Progressrouter.post(
   isPromoterAuth,
   expressAsyncHandler(async (req, res) => {
     const Allied_Data = await AppliedModel.find({ jobs: req.body.jobid,posted_by:req.user._id });
+    console.log(Allied_Data)
     const arrX = await Promise.all(
       Allied_Data.map(async (data) => {
         const SignUpDetails = await SignUpModel.findById(data.user_by);
+        
         try {
     
           var IDmodel = await ProfileModel.findOne({contactNumber:SignUpDetails.phoneNumber})
