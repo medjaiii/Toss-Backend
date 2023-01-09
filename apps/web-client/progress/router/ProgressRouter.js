@@ -56,10 +56,16 @@ Progressrouter.put(
   expressAsyncHandler(async (req, res) => {
     const { object_id, status,user_by } = req.body;
     
-    const saveProgess = await AppliedModel.updateOne({jobs:object_id,user_by:user_by},{
+    await AppliedModel.updateOne({jobs:object_id,user_by:user_by},{
       
       $set:{
         job_status:status}
+      })
+      .then((data)=>{
+        res.status(200).send({"message":"Updated"})
+      })
+      .catch((err)=>{
+        res.status(400).send({"message":"Some Error Occured"})
       })
     //   { _id: object_id, "job_code.job_name": job_id },
 
@@ -71,7 +77,7 @@ Progressrouter.put(
     //   { multi: true }
     // );
 
-    res.status(200).send(saveProgess);
+    // res.status(200).send(saveProgess);
   })
 );
 
