@@ -54,18 +54,32 @@ Progressrouter.put(
   "/editJobStatus",
   isPromoterAuth,
   expressAsyncHandler(async (req, res) => {
-    const { object_id, status,user_by } = req.body;
+    const { job_id, status,user_id } = req.body;
     
-    await AppliedModel.updateOne({jobs:object_id,user_by:user_by},{
+    try {
+      var findUser = await SignUpModel.findOne({_id:user_id})
       
+    } catch (error) {
+      res.status(400).send({"message":"User Does not exists"})
+    }
+
+    await AppliedModel.updateOne({jobs:job_id,user_by:user_id},{
+
       $set:{
         job_status:status}
       })
-      .then((data)=>{
-        res.status(200).send({"message":"Updated"})
+      .then(async(data)=>{
+        // res.status(200).send("ok")
+        await ProfileModel.updateOne({contactNumber:findUser.phoneNumber},{"approvedStatus":"Approved"})
+        .then(data=>{
+          res.status(200).send({"message":"User Approved and Job status Updated"})
+        })
+        .catch((err)=>{
+          res.status(400).send({"message":"User does not exists or id mis-match"})
+        })
       })
       .catch((err)=>{
-        res.status(400).send({"message":"Some Error Occured"})
+        res.status(400).send(err)
       })
     //   { _id: object_id, "job_code.job_name": job_id },
 
