@@ -4,7 +4,7 @@ import ProfileModel from "../model/UserProfile.js";
 import uploadFile from "../../../../Multer_config.js";
 import UserProfileImages from "../model/UserImages.js";
 import { option } from "../../../../DataBaseConstants.js";
-import { isAuth, isPromoterAuth } from "../../util.js";
+import { isAdminAuth, isAuth, isPromoterAuth } from "../../util.js";
 import UserSkillModel from "../model/UserSkills.js";
 import SignUpModel from "../../sign_up_api/model/SignUpModel.js";
 import PromoterProfileImages from "../../sign_up_api/model/PromoterImagesModel.js";
@@ -255,5 +255,39 @@ UserProfileRouter.put(
         });
            
       }))
+
+UserProfileRouter.get("/allusers",isAdminAuth,expressAsyncHandler(async(req,res,next)=>{
+      
+  ProfileModel.find({}).populate("profileImages").exec((err, profiles) => {
+    if (err) {
+      res.send(err)
+    } else {
+      res.status(200).send(profiles)
+    }
+  })    
+    // const findUser = await SignUpModel.findOne({_id:req.user._id})
+    
+    // const imageLink = await PromoterProfileImages.findById(findUser.job_images)
+    
+    // const userProfile = Object.assign( IDmodel,{profileImages:getImages})
+    
+    // const news = Object.assign(userProfile,{"FrontImage":imageLink.promoterImages})
+      
+}))
+
+UserProfileRouter.put(
+  "/editUserProfile",isAdminAuth,uploadFile,
+  expressAsyncHandler(async (req, res,next) => {
+    await ProfileModel.updateOne({contactNumber:req.user.phoneNumber},req.body,option)
+    .then(data=>{
+      res.send("saved")
+    })
+    .catch((err)=>{
+      res.send(err)
+    })
+
+    
+  })
+);
 
 export default UserProfileRouter;

@@ -18,7 +18,7 @@ const transporter = nodemailer.createTransport({
 });
 
 
-EmailRouter.get(
+EmailRouter.post(
   "/sendMail",
   expressAsyncHandler(async (req, res) => {
     const mailOptions = {
@@ -32,7 +32,7 @@ EmailRouter.get(
       if(err)
           console.log(err)
       else
-          res.status(400).send({"message":"Link Sent"})
+          res.status(200).send({"message":"Link Sent"})
     })
     
   })

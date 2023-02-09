@@ -7,7 +7,7 @@ import UserProfileImages from "../../profile/model/UserImages.js";
 import ProfileModel from "../../profile/model/UserProfile.js";
 import PromoterProfileImages from "../../sign_up_api/model/PromoterImagesModel.js";
 import SignUpModel from "../../sign_up_api/model/SignUpModel.js";
-import { isAuth, isPromoterAuth } from "../../util.js";
+import { isAdminAuth, isAuth, isPromoterAuth } from "../../util.js";
 import ProgressModel from "../model/ProgressModel.js";
 
 const Progressrouter = express.Router();
@@ -58,13 +58,12 @@ Progressrouter.put(
     
     try {
       var findUser = await SignUpModel.findOne({_id:user_id})
-      
     } catch (error) {
       res.status(400).send({"message":"User Does not exists"})
     }
-
+    
     await AppliedModel.updateOne({jobs:job_id,user_by:user_id},{
-
+      
       $set:{
         job_status:status}
       })
@@ -206,6 +205,33 @@ Progressrouter.get(
 
     res.status(200).send("Sum= "+sum+" ~count= "+count)
   })
+);
+
+Progressrouter.put(
+  "/editJobStatusbyadmin",
+  isAdminAuth,
+  expressAsyncHandler(async (req, res) => {
+    console.log(req.body)
+    await Jobmodel.updateOne({_id:req.body.userid},req.body.data)
+    .then(data=>{
+      res.status(200).send({"message":"User Approved and Job status Updated"})
+    })
+    .catch((err)=>{
+      res.status(400).send({"message":"User does not exists or id mis-match"})
+    })
+  })
+
+    //   { _id: object_id, "job_code.job_name": job_id },
+
+    //   {
+    //     $set: {
+    //       "job_code.$.status": status,
+    //     },
+    //   },
+    //   { multi: true }
+    // );
+
+    // res.status(200).send(saveProgess);
 );
 
 export default Progressrouter;

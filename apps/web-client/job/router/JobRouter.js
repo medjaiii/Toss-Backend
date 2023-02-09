@@ -2,7 +2,7 @@ import express from "express";
 import expressAsyncHandler from "express-async-handler";
 import Jobmodel from "../model/JobModel.js";
 import uploadFile from "../../../../Multer_config.js";
-import { isAuth, isPromoterAuth } from "../../util.js";
+import { isAdminAuth, isAuth, isPromoterAuth } from "../../util.js";
 import AppliedModel from "../model/AppliedModel.js";
 
 const Jobrouter = express.Router();
@@ -62,6 +62,19 @@ Jobrouter.post(
         res.status(200).send({"message":"Job Closed Successfully"});
       }
     })
+
+  })
+);
+
+Jobrouter.get(
+  "/adminaalljobs",
+  isAdminAuth,
+  expressAsyncHandler(async (req, res, next) => {
+
+    const getAppliedJobs = await AppliedModel.find({})
+    const getarr = getAppliedJobs.map((data)=>data.jobs)
+    const getalljobs = await Jobmodel.find({})
+      res.status(200).send(getalljobs);
 
   })
 );

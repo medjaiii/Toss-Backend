@@ -3,7 +3,7 @@ import bcrypt from "bcryptjs";
 import expressAsyncHandler from "express-async-handler";
 import PromoterSignUpModel from "../model/PromoterSignUpModel.js";
 import PromoterProfileImages from "../model/PromoterImagesModel.js";
-import { generatePromoterToken, isPromoterAuth } from "../../util.js";
+import { generatePromoterToken, isAdminAuth, isPromoterAuth } from "../../util.js";
 import uploadFile from "../../../../Multer_config.js";
 
 const PromoterSignup = express.Router();
@@ -93,7 +93,17 @@ PromoterSignup.get("/getpromotersign",isPromoterAuth,expressAsyncHandler(async(r
   }
   res.status(200).send({message:"Invalid Email or password"})
       
+}))
 
+PromoterSignup.get("/getallpromoters",isAdminAuth,expressAsyncHandler(async(req,res,next)=>{
+    PromoterSignUpModel.find({}).populate("job_images").exec((err, profiles) => {
+      if (err) {
+        res.send(err)
+      } else {
+        res.status(200).send(profiles)
+      }
+    })    
+      
 }))
 
 export default PromoterSignup;

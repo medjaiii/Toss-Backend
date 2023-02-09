@@ -93,7 +93,7 @@ export const isAdminAuth = (req,res,next)=>{
     Jwt.verify(token,process.env.PROMOTER_JWT_SECRET || "AdminSecretKey",(err,decode)=>{
       if(err){
         console.log(err)
-        res.status(400).send({message:"Invalid Token"})
+        res.status(400).send({message:err})
       }else{
         req.user = decode
         next()
