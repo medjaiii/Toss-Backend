@@ -217,7 +217,7 @@ Progressrouter.get(
           const totalCount = result[0].totalCount;
           res.status(200).json({"Total_Price":totalPrice,"Total_Completed_Jobs":totalCount})
         } else {
-          res.status(400).json({"Total_Price":0,"Total_Completed_Jobs":0})
+          res.status(200).json({"Total_Price":0,"Total_Completed_Jobs":0})
 
         }
       })
