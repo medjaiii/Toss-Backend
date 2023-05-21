@@ -196,14 +196,36 @@ Progressrouter.get(
   "/totalearning",
   isPromoterAuth,
   expressAsyncHandler(async (req, res) => {
-    const data = await (await AppliedModel.find({posted_by:req.user._id}).where({job_status:"Completed"}).select("price")).length
-    const count = await (await AppliedModel.find({posted_by:req.user._id}).where({job_status:"Completed"}).select("price")).length
-    let sum = 0
-    for (let i = 0;i<data.length;i++){
-      sum +=  parseInt(data[i].price)
-    }
+    AppliedModel.aggregate([
+      {
+        $match: {
+          job_status: 'Completed'
+        }
+      },
+      {
+        $group: {
+          _id: null,
+          totalPrice: { $sum: { $toInt: "$price" } },
+          totalCount: { $sum: 1 }
 
-    res.status(200).send("Sum= "+sum+" ~count= "+count)
+        }
+      }
+    ])
+      .then(result => {
+        if (result.length > 0) {
+          const totalPrice = result[0].totalPrice;
+          const totalCount = result[0].totalCount;
+          res.status(200).json({"Total_Price":totalPrice,"Total_Completed_Jobs":totalCount})
+        } else {
+          console.log('No completed jobs found.');
+          res.status(400).json({"Total_Price":0,"Total_Completed_Jobs":0})
+
+        }
+      })
+      .catch(error => {
+        console.error('Error:', error);
+      });
+
   })
 );
 
