@@ -79,4 +79,16 @@ Jobrouter.get(
   })
 );
 
+Jobrouter.delete("/deletejob",isAdminAuth,expressAsyncHandler(async(req,res)=>{
+  console.log(">>",req.body)
+  const job  = await Jobmodel.findById(req.body.userid)
+  if (!job) {
+    res.status(400).send({"message":'User not found'});
+  }else{
+    await job.remove()
+    res.status(400).send({"message":"Job Deleted"})
+  }
+
+}))
+
 export default Jobrouter;

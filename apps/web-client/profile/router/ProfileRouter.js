@@ -49,17 +49,16 @@ UserProfileRouter.post("/addProfile",isAuth,uploadFile,
 );
 
 UserProfileRouter.put(
-  "/editProfile/",isAuth,uploadFile,
+  "/editProfile",isAuth,uploadFile,
   expressAsyncHandler(async (req, res,next) => {
+    console.log(req.user) 
     await ProfileModel.updateOne({contactNumber:req.user.phoneNumber},req.body,option)
     .then(data=>{
       res.send("saved")
     })
     .catch((err)=>{
       res.send(err)
-    })
-
-    
+    })    
   })
 );
 
@@ -237,23 +236,32 @@ UserProfileRouter.post(
 UserProfileRouter.get(
     "/getSkills",
     expressAsyncHandler(async (req, res,next) => {
-      const skills = await UserSkillModel.find()
-      res.send({"skills":skills})
-  
+      const skills = await UserSkillModel.findById("6469d08f21b507a05daa3ddb")
+      res.json(skills)
     }))
 
 UserProfileRouter.put(
     "/updateSkills",
       expressAsyncHandler(async (req, res,next) => {
-
-        UserSkillModel.findByIdAndUpdate(
-          { _id: "63adfa889440e86de8dac711"},
-          {"$push": { "skills": req.body.skills }}
-        ).exec(function (err, managerparent) {
-           if(err) throw err
-           res.send({"message":"Updatd"})
-        });
-           
+        const  id  = "6469d08f21b507a05daa3ddb"
+        const { skills } = req.body;
+      
+        try {
+          const profile = await UserSkillModel.findByIdAndUpdate(
+            id,
+            { skills },
+            { new: true }
+          );
+      
+          if (!profile) {
+            return res.status(404).json({ error: "Profile not found" });
+          }
+      
+          return res.json(profile);
+        } catch (error) {
+          console.error(error);
+          return res.status(500).json({ error: "Internal server error" });
+        }
       }))
 
 UserProfileRouter.get("/allusers",isAdminAuth,expressAsyncHandler(async(req,res,next)=>{
@@ -276,11 +284,11 @@ UserProfileRouter.get("/allusers",isAdminAuth,expressAsyncHandler(async(req,res,
 }))
 
 UserProfileRouter.put(
-  "/editUserProfile",isAdminAuth,uploadFile,
+  "/editUserProfile",
   expressAsyncHandler(async (req, res,next) => {
-    await ProfileModel.updateOne({contactNumber:req.user.phoneNumber},req.body,option)
+    await ProfileModel.updateOne({_id:req.body.userid},req.body.data,option)
     .then(data=>{
-      res.send("saved")
+      res.send(data)
     })
     .catch((err)=>{
       res.send(err)
@@ -289,5 +297,17 @@ UserProfileRouter.put(
     
   })
 );
+
+UserProfileRouter.delete("/deleteuser",isAdminAuth,expressAsyncHandler(async(req,res)=>{
+  console.log(">>",req.body)
+  const job  = await ProfileModel.findById(req.body.userid)
+  if (!job) {
+    res.status(400).send({"message":'User not found'});
+  }else{
+    await job.remove()
+    res.status(400).send({"message":"User Deleted"})
+  }
+
+}))
 
 export default UserProfileRouter;

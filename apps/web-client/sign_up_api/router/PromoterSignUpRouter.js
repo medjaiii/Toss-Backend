@@ -106,4 +106,32 @@ PromoterSignup.get("/getallpromoters",isAdminAuth,expressAsyncHandler(async(req,
       
 }))
 
+PromoterSignup.put(
+  "/editPromoterbyAdmin",
+  isAdminAuth,
+  expressAsyncHandler(async (req, res) => {
+    console.log(req.body)
+    await PromoterSignUpModel.updateOne({_id:req.body.userid},req.body.data)
+    .then(data=>{
+      res.status(200).send({"message":"Promoter Updated"})
+    })
+    .catch((err)=>{
+      res.status(400).send({"message":"User does not exists or id mis-match"})
+    })
+  })
+)
+
+PromoterSignup.delete("/deletepromoter",isAdminAuth,expressAsyncHandler(async(req,res)=>{
+  console.log(">>",req.body)
+  const job  = await PromoterSignUpModel.findById(req.body.userid)
+  res.send(job)
+  // if (!job) {
+  //   res.status(400).send({"message":'User not found'});
+  // }else{
+  //   console.log(job)
+  //   await job.remove()
+  //   res.status(200).send({"message":"Promoter Deleted"})
+  // }
+
+}))
 export default PromoterSignup;
