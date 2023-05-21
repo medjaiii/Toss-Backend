@@ -174,7 +174,6 @@ Progressrouter.get(
   "/promoterAllJobsStatus",
   isPromoterAuth,
   expressAsyncHandler(async (req, res) => {
-    console.log(req.user._id)
     const postedBY = await AppliedModel.find({posted_by:req.user._id})
     
     const findalData = await Promise.all(postedBY.map(async(data)=>{
@@ -194,12 +193,13 @@ Progressrouter.get(
 
 Progressrouter.get(
   "/totalearning",
-  isPromoterAuth,
+  isAuth,
   expressAsyncHandler(async (req, res) => {
     AppliedModel.aggregate([
       {
         $match: {
-          job_status: 'Completed'
+          job_status: 'Completed',
+          user_by:req.user._id
         }
       },
       {
@@ -217,13 +217,12 @@ Progressrouter.get(
           const totalCount = result[0].totalCount;
           res.status(200).json({"Total_Price":totalPrice,"Total_Completed_Jobs":totalCount})
         } else {
-          console.log('No completed jobs found.');
           res.status(400).json({"Total_Price":0,"Total_Completed_Jobs":0})
 
         }
       })
       .catch(error => {
-        console.error('Error:', error);
+        res.status(400).send(error)
       });
 
   })
