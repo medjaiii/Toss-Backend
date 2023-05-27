@@ -1,7 +1,7 @@
 import bcrypt from "bcryptjs";
 import express from "express";
 import expressAsyncHandler from "express-async-handler";
-import uploadFile from "../../../../Multer_config.js";
+import uploadFile, { uploadSingle} from "../../../../Multer_config.js";
 import { generateToken, isAuth } from "../../util.js";
 import PromoterProfileImages from "../model/PromoterImagesModel.js";
 import SignUpModel from "../model/SignUpModel.js";
@@ -163,24 +163,31 @@ SignUpRouter.delete("/deleteimage/:id",isAuth,expressAsyncHandler(async(req,res)
 }))
 
 SignUpRouter.put(
-  "/editImages",isAuth,uploadFile,
-  expressAsyncHandler(async (req, res,next) => {
-    const images = req.files.reduce(
-      (acc, image) => [...acc, { name: image.location }],
-      []
-    );
-      
-    const findUser = await SignUpModel.findOne({_id:req.user._id})
-      
-    await PromoterProfileImages.findOneAndUpdate({_id:findUser.job_images},{"$push":{promoterImages:images}},option)
-      .then((data)=>{
-        res.status(200).json(data)
-      })
-      .catch((err)=>{
-        res.status(400).json({"message":err})
-      })               
+  "/editImages",
+  isAuth,
+  uploadSingle.single("profileImages"),
+  expressAsyncHandler(async (req, res, next) => {
+    const image = req.file;
+    try {
+      const findUser = await SignUpModel.findOne({ _id: req.user._id });
+
+      if (findUser) {
+        const updatedProfileImages = await PromoterProfileImages.findOneAndUpdate(
+          { _id: findUser.job_images },
+          { promoterImages: image.location },
+          { new: true } // Return the updated document
+        );
+
+        res.status(200).json(updatedProfileImages);
+      } else {
+        res.status(404).json({ message: "User not found" });
+      }
+    } catch (error) {
+      res.status(400).json({ message: error.message });
+    }
   })
 );
+
 
 
 export default SignUpRouter

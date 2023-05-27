@@ -137,9 +137,6 @@ UserProfileRouter.delete("/deleteImages/:id",isAuth,expressAsyncHandler(async(re
     .catch((err)=>{
       res.status(400).json({"message":err})
     })
- 
-  
-
 
 }))
 

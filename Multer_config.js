@@ -38,6 +38,20 @@ const uploadFile = (req,res,next)=>{
 
 
 
+export const uploadSingle = multer({
+    storage: multerS3({
+        s3:S3,
+        bucket:"sghapp",
+        contentType: multerS3.AUTO_CONTENT_TYPE,
+        metadata:function(req,file,cb){
+            cb(null,{fieldName: file.fieldname})
+        },
+        key: function(req,file,cb){
+            cb(null, Date.now().toString())
+        }
+      }
+    )
+    })
 // const fileFilter = (req,file,cb)=>{
 
 //     if(file.mimetype==="image/jpeg" || file.mimetype==="image/jpg" || file.mimetype==="image/png" ){
