@@ -55,31 +55,44 @@ Progressrouter.put(
   isPromoterAuth,
   expressAsyncHandler(async (req, res) => {
     const { job_id, status,user_id } = req.body;
-    
-    try {
-      var findUser = await SignUpModel.findOne({_id:user_id})
-    } catch (error) {
-      res.status(400).send({"message":"User Does not exists"})
-    }
-    
-    await AppliedModel.updateOne({jobs:job_id,user_by:user_id},{
+
+    if(status==="Completed"){
+      AppliedModel.updateMany({ status: "Approved", jobs: job_id }, { $set: { job_status: "Completed" } }, function(err, result) {
+        if (err) {
+          console.log(err);
+        } else {
+          res.status(200).send({"Status":"Job Completed"})
+        }
+      });
+    }else{
+      try {
+        var findUser = await SignUpModel.findOne({_id:user_id})
+      } catch (error) {
+        res.status(400).send({"message":"User Does not exists"})
+      }
       
-      $set:{
-        job_status:status}
-      })
-      .then(async(data)=>{
-        // res.status(200).send("ok")
-        await ProfileModel.updateOne({contactNumber:findUser.phoneNumber},{"approvedStatus":"Approved"})
-        .then(data=>{
-          res.status(200).send({"message":"User Approved and Job status Updated"})
+      await AppliedModel.updateOne({jobs:job_id,user_by:user_id},{
+        
+        $set:{
+          job_status:status,status:"Approved"}
+        })
+        .then(async(data)=>{
+          // res.status(200).send("ok")
+          await ProfileModel.updateOne({contactNumber:findUser.phoneNumber},{"approvedStatus":"Approved"})
+          .then(data=>{
+            res.status(200).send({"message":"User Approved and Job status Updated"})
+          })
+          .catch((err)=>{
+            res.status(400).send({"message":"User does not exists or id mis-match"})
+          })
         })
         .catch((err)=>{
-          res.status(400).send({"message":"User does not exists or id mis-match"})
+          res.status(400).send(err)
         })
-      })
-      .catch((err)=>{
-        res.status(400).send(err)
-      })
+    }
+    
+
+      
     //   { _id: object_id, "job_code.job_name": job_id },
 
     //   {

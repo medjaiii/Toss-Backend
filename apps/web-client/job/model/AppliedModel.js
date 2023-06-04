@@ -7,6 +7,7 @@ const appliedSchema = new Mongoose.Schema(
     job_status:{type:String},
     price:{type:String},
     posted_by:{type:String},
+    status:{type:String,default:"Unapproved"},
 
   },
   {
