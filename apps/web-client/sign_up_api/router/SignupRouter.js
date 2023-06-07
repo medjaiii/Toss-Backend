@@ -163,28 +163,22 @@ SignUpRouter.delete("/deleteimage/:id",isAuth,expressAsyncHandler(async(req,res)
 }))
 
 SignUpRouter.put(
-  "/editImages",
-  isAuth,
-  uploadSingle.single("profileImages"),
-  expressAsyncHandler(async (req, res, next) => {
-    const image = req.file;
-    try {
-      const findUser = await SignUpModel.findOne({ _id: req.user._id });
+  "/editImages",isAuth,uploadFile,
+  expressAsyncHandler(async (req, res,next) => {
+    const images = req.files.reduce(
+      (acc, image) => [...acc, { name: image.location }],
+      []
+    );
 
-      if (findUser) {
-        const updatedProfileImages = await PromoterProfileImages.findOneAndUpdate(
-          { _id: findUser.job_images },
-          { promoterImages: image.location },
-          { new: true } // Return the updated document
-        );
+    const findUser = await SignUpModel.findOne({_id:req.user._id})
 
-        res.status(200).json(updatedProfileImages);
-      } else {
-        res.status(404).json({ message: "User not found" });
-      }
-    } catch (error) {
-      res.status(400).json({ message: error.message });
-    }
+    await PromoterProfileImages.findOneAndUpdate({_id:findUser.job_images},{"$push":{promoterImages:images}},option)
+      .then((data)=>{
+        res.status(200).json(data)
+      })
+      .catch((err)=>{
+        res.status(400).json({"message":err})
+      })               
   })
 );
 
