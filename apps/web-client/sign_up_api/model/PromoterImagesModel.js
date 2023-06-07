@@ -2,9 +2,11 @@ import mongoose from "mongoose";
 
 const PromoterProfileImageSchema = mongoose.Schema({
   promoterImages: {
-    type: String,
-    required: [true, "Please provide an image"],
-  },
+    _id: mongoose.Types.ObjectId(),
+    type: [{ name: String }],
+    required: [true, "Please Provide Atleast 1 Image"],
+    default: undefined,
+  }
 });
 
 mongoose.pluralize(null);
