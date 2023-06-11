@@ -137,10 +137,32 @@ Progressrouter.get(
   "/allpromoterjobs",
   isPromoterAuth,
   expressAsyncHandler(async (req, res) => {
-    const PromoterAllJobs = await Jobmodel.find({ posted_by: req.user._id, job_status:{$ne:"Disable"}});
-    res.status(200).send(PromoterAllJobs);
-  })
-);
+
+    try {
+      const jobs = await Jobmodel.find({ posted_by: req.user._id, job_status:{$ne:"Disable"} }).lean(); // Find all jobs posted by "abc"
+      const jobIds = jobs.map((job) => job._id); // Get the job IDs
+  
+      const appliedJobs = await AppliedModel.find({
+        jobs: { $in: jobIds }, // Find applied jobs where jobs field is in the jobIds array
+      }).populate({
+        path: "jobs",
+        model: "Jobmodel",
+      });
+  
+      const jobData = appliedJobs.map((appliedJob) => ({
+        job: appliedJob.jobs,
+        job_status: appliedJob.job_status,
+      }));
+  
+      res.status(200).send(jobData);
+    } catch (error) {
+      console.error(error);
+    }
+
+    // const PromoterAllJobs = await Jobmodel.find({ posted_by: req.user._id, job_status:{$ne:"Disable"}});
+    // res.status(200).send(PromoterAllJobs);
+
+  }))
 
 Progressrouter.post(
   "/promoterAppliedJobsByUser",
@@ -173,6 +195,7 @@ Progressrouter.post(
         const userProfile = Object.assign( IDmodel,{profileImages:getImages})
         
         return {
+          user_approved: data.status,
           SignUpDetails,
           userProfile
         };
