@@ -138,29 +138,32 @@ Progressrouter.get(
   isPromoterAuth,
   expressAsyncHandler(async (req, res) => {
 
-    try {
-      const jobs = await Jobmodel.find({ posted_by: req.user._id, job_status:{$ne:"Disable"} }).lean(); // Find all jobs posted by "abc"
-      const jobIds = jobs.map((job) => job._id); // Get the job IDs
-  
-      const appliedJobs = await AppliedModel.find({
-        jobs: { $in: jobIds }, // Find applied jobs where jobs field is in the jobIds array
-      }).populate({
-        path: "jobs",
-        model: "Jobmodel",
-      });
-  
-      const jobData = appliedJobs.map((appliedJob) => ({
-        job: appliedJob.jobs,
-        job_status: appliedJob.job_status,
-      }));
-  
-      res.status(200).send(jobData);
-    } catch (error) {
-      console.error(error);
-    }
+    // try {
+    //   const jobs = await Jobmodel.find({ posted_by: req.user._id, job_status:{$ne:"Disable"} }).lean(); // Find all jobs posted by "abc"
+    //   const jobIds = jobs.map((job) => job._id); // Get the job IDs
+    //   console.log(jobIds)      
+    //   const appliedJobs = await AppliedModel.find({
+    //     jobs: { $in: jobIds }, // Find applied jobs where jobs field is in the jobIds array
+    //   }).populate({
+    //     path: "jobs",
+    //     model: "Jobmodel",
+    //   });
 
-    // const PromoterAllJobs = await Jobmodel.find({ posted_by: req.user._id, job_status:{$ne:"Disable"}});
-    // res.status(200).send(PromoterAllJobs);
+    //   const jobData = _.chain(jobs)
+    //   .leftOuterJoin(appliedJobs, "_id", "jobs._id")
+    //   .map((item) => ({
+    //     job: item.jobs ? item.jobs : item,
+    //     job_status: item.jobs ? item.job_status : null,
+    //   }))
+    //   .value();
+      
+    //   res.status(200).send(jobData);
+    // } catch (error) {
+    //   console.error(error);
+    // }
+
+    const PromoterAllJobs = await Jobmodel.find({ posted_by: req.user._id, job_status:{$ne:"Disable"}});
+    res.status(200).send(PromoterAllJobs);
 
   }))
 
