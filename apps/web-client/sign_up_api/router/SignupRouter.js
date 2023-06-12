@@ -68,6 +68,7 @@ SignUpRouter.post(
       about: req.body.about ? req.body.about: "" ,
       previousExpereince: req.body.previousExpereince ? req.body.previousExpereince:"",
       skills: req.body.skills ? req.body.skills :[],
+      height:req.body.height ? req.body.height:"",
     });
 
     const saveProfile = await UserProfile.save();

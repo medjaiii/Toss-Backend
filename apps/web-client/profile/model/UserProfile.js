@@ -35,6 +35,7 @@ const UserSignUp = mongoose.Schema({
     type:String,
     required:[false],
   },
+  height:{type:String,required:[false]},
   skills: {
     type: [{
         name : String,
