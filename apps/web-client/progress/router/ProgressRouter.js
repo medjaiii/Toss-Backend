@@ -177,7 +177,7 @@ Progressrouter.post(
       Allied_Data.map(async (data) => {
         const SignUpDetails = await SignUpModel.findById(data.user_by);
         
-        try {
+        try { 
     
           var IDmodel = await ProfileModel.findOne({contactNumber:SignUpDetails.phoneNumber})
         } catch (error) {
@@ -194,13 +194,16 @@ Progressrouter.post(
         if(IDmodel===null ||IDmodel===undefined ){
           var IDmodel = "No profile is created. Please create one first."
         }
-      
+  
+        const image = await PromoterProfileImages.findById(SignUpDetails.job_images)
+        const front_image = image && image.promoterImages[0]
         const userProfile = Object.assign( IDmodel,{profileImages:getImages})
         
         return {
           user_approved: data.status,
           SignUpDetails,
-          userProfile
+          userProfile,
+          front_image
         };
       })
     );
