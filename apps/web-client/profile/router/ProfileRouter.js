@@ -233,7 +233,7 @@ UserProfileRouter.post(
 UserProfileRouter.get(
     "/getSkills",
     expressAsyncHandler(async (req, res,next) => {
-      const skills = await UserSkillModel.findById("6480a915689151f526a8d6e4")
+      const skills = await UserSkillModel.findById("651e8c04ddc1edfe6c4bf8b0")
       res.json(skills)
     }))
 
