@@ -6,7 +6,7 @@ const uploadFile = (req,res,next)=>{
     const Storage = multer({
         storage:multerS3({
             s3:S3,
-            bucket:"sghapp",
+            bucket:"tossbucket",
             contentType: multerS3.AUTO_CONTENT_TYPE,
             metadata:function(req,file,cb){
                 cb(null,{fieldName: file.fieldname})
@@ -41,7 +41,7 @@ const uploadFile = (req,res,next)=>{
 export const uploadSingle = multer({
     storage: multerS3({
         s3:S3,
-        bucket:"sghapp",
+        bucket:"tossbucket",
         contentType: multerS3.AUTO_CONTENT_TYPE,
         metadata:function(req,file,cb){
             cb(null,{fieldName: file.fieldname})
