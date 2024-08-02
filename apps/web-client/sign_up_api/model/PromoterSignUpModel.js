@@ -2,7 +2,7 @@ import Mongoose from "mongoose";
 
 const signupSchema = new Mongoose.Schema(
   {
-    full_name: { type: String, required: [true, "name required"] },    
+    full_name: { type: String, required: [true, "name required"] },
     work_email: {
       type: String,
       required: [true, "Email required"],
@@ -11,15 +11,19 @@ const signupSchema = new Mongoose.Schema(
       type: String,
       required: [true, "Company required"],
     },
-    office_address :{
-        type:String,
-        required:[true,"Address Required"]
+    designation: {
+      type: String,
+      required: [true, "Designation required"]
+    },
+    office_address: {
+      type: String,
+      required: [true, "Address Required"]
     },
     password: { type: String, required: [true, "password requred"] },
-    job_images:{ type: Mongoose.Schema.Types.ObjectId,ref :"PromoterProfileImages"},
-    createdDate:{
-      type:Date,
-      default:Date.now
+    job_images: { type: Mongoose.Schema.Types.ObjectId, ref: "PromoterProfileImages" },
+    createdDate: {
+      type: Date,
+      default: Date.now
     },
   },
   {
@@ -28,7 +32,7 @@ const signupSchema = new Mongoose.Schema(
 );
 
 Mongoose.pluralize(null)
-signupSchema.index({work_email:1},{unique:true})
+signupSchema.index({ work_email: 1 }, { unique: true })
 
 const PromoterSignUpModel = Mongoose.model("PromoterSignUp", signupSchema);
 
