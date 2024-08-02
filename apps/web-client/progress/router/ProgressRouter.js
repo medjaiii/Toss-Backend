@@ -20,31 +20,31 @@ Progressrouter.post(
     const getloggedInUser = await SignUpModel.findOne({
       email: req.user.email,
     });
-    
-    const getAppliedJobs = await AppliedModel.find({"user_by":req.user._id,"jobs":req.body.Extension.jobs})
-    if(getAppliedJobs.length>0){
-      res.status(400).send({"message":"You Cannot Apply on Same Job Again."})
+
+    const getAppliedJobs = await AppliedModel.find({ "user_by": req.user._id, "jobs": req.body.Extension.jobs })
+    if (getAppliedJobs.length > 0) {
+      res.status(400).send({ "message": "You Cannot Apply on Same Job Again." })
       return
     }
-  
+
     const Job = await Jobmodel.findById(req.body.Extension.jobs)
 
-    if(Job.job_status==="Disable"){
-      res.status(400).send({"message":"You Cannot Apply on Closed Job."})
-    }else{
+    if (Job.job_status === "Disable") {
+      res.status(400).send({ "message": "You Cannot Apply on Closed Job." })
+    } else {
 
       const extenObject = Object.assign(req.body.Extension, {
-        user_by: getloggedInUser._id,job_status:"Applied",posted_by:Job.posted_by,price:Job.payment
+        user_by: getloggedInUser._id, job_status: "Applied", posted_by: Job.posted_by, price: Job.payment
       });
-  
+
       const applied = new AppliedModel(extenObject);
       applied.save()
-      .then((data) => {
-        res.status(200).send(data);
-      })
-      .catch((err) => {
-        res.status(400).send({"message":"Bad Request"});
-      });
+        .then((data) => {
+          res.status(200).send(data);
+        })
+        .catch((err) => {
+          res.status(400).send({ "message": "Bad Request" });
+        });
     }
 
   })
@@ -54,45 +54,87 @@ Progressrouter.put(
   "/editJobStatus",
   isPromoterAuth,
   expressAsyncHandler(async (req, res) => {
-    const { job_id, status,user_id } = req.body;
+    const { job_id, status, user_id } = req.body;
 
-    if(status==="Completed"){
-      AppliedModel.updateMany({ status: "Approved", jobs: job_id }, { $set: { job_status: "Completed" } }, function(err, result) {
+    if (status === "Completed") {
+      AppliedModel.updateMany({ status: "Approved", jobs: job_id }, { $set: { job_status: "Completed" } }, function (err, result) {
         if (err) {
           console.log(err);
         } else {
-          res.status(200).send({"Status":"Job Completed"})
+          res.status(200).send({ "Status": "Job Completed" })
         }
       });
-    }else{
+    } else {
       try {
-        var findUser = await SignUpModel.findOne({_id:user_id})
+        var findUser = await SignUpModel.findOne({ _id: user_id })
       } catch (error) {
-        res.status(400).send({"message":"User Does not exists"})
+        res.status(400).send({ "message": "User Does not exists" })
       }
-      
-      await AppliedModel.updateOne({jobs:job_id,user_by:user_id},{
-        
-        $set:{
-          job_status:status,status:"Approved"}
-        })
-        .then(async(data)=>{
+
+      await AppliedModel.updateOne({ jobs: job_id, user_by: user_id }, {
+
+        $set: {
+          job_status: status, status: "Approved"
+        }
+      })
+        .then(async (data) => {
           // res.status(200).send("ok")
-          await ProfileModel.updateOne({contactNumber:findUser.phoneNumber},{"approvedStatus":"Approved"})
-          .then(data=>{
-            res.status(200).send({"message":"User Approved and Job status Updated"})
-          })
-          .catch((err)=>{
-            res.status(400).send({"message":"User does not exists or id mis-match"})
-          })
+          await ProfileModel.updateOne({ contactNumber: findUser.phoneNumber }, { "approvedStatus": "Approved" })
+            .then(data => {
+              res.status(200).send({ "message": "User Approved and Job status Updated" })
+            })
+            .catch((err) => {
+              res.status(400).send({ "message": "User does not exists or id mis-match" })
+            })
         })
-        .catch((err)=>{
+        .catch((err) => {
           res.status(400).send(err)
         })
     }
-    
 
-      
+
+
+    //   { _id: object_id, "job_code.job_name": job_id },
+
+    //   {
+    //     $set: {
+    //       "job_code.$.status": status,
+    //     },
+    //   },
+    //   { multi: true }
+    // );
+
+    // res.status(200).send(saveProgess);
+  })
+);
+
+Progressrouter.put(
+  "/editPostedJobStatus",
+  isPromoterAuth,
+  expressAsyncHandler(async (req, res) => {
+    const { job_id, status, user_id } = req.body;
+
+    if (status === "Completed") {
+      // await Jobmodel.updateOne({ _id: req.body.userid }, req.body.data)
+      Jobmodel.updateOne({ _id: job_id }, { $set: { job_status: "Completed" } }, function (err, result) {
+        if (err) {
+          console.log(err);
+        } else {
+          res.status(200).send({ "Status": "Job Completed" })
+        }
+      });
+    } else {
+      Jobmodel.updateOne({ _id: job_id }, { $set: { job_status: status } }, function (err, result) {
+        if (err) {
+          console.log(err);
+        } else {
+          res.status(200).send({ "Status": "Job " + status })
+        }
+      });
+    }
+
+
+
     //   { _id: object_id, "job_code.job_name": job_id },
 
     //   {
@@ -116,14 +158,14 @@ Progressrouter.get(
       email: req.user.email,
     });
 
-    const dta = await AppliedModel.find({user_by:getloggedInUser._id})
+    const dta = await AppliedModel.find({ user_by: getloggedInUser._id })
 
-    const findalData = await Promise.all(dta.map(async(dtaa)=>{
+    const findalData = await Promise.all(dta.map(async (dtaa) => {
 
       const job = await Jobmodel.findById(dtaa.jobs)
       return {
         job,
-        status:dtaa.job_status
+        status: dtaa.job_status
       }
 
     }))
@@ -156,13 +198,13 @@ Progressrouter.get(
     //     job_status: item.jobs ? item.job_status : null,
     //   }))
     //   .value();
-      
+
     //   res.status(200).send(jobData);
     // } catch (error) {
     //   console.error(error);
     // }
 
-    const PromoterAllJobs = await Jobmodel.find({ posted_by: req.user._id, job_status:{$ne:"Disable"}});
+    const PromoterAllJobs = await Jobmodel.find({ posted_by: req.user._id, job_status: { $ne: "Disable" } });
     res.status(200).send(PromoterAllJobs);
 
   }))
@@ -171,34 +213,34 @@ Progressrouter.post(
   "/promoterAppliedJobsByUser",
   isPromoterAuth,
   expressAsyncHandler(async (req, res) => {
-    const Allied_Data = await AppliedModel.find({ jobs: req.body.jobid,posted_by:req.user._id });
+    const Allied_Data = await AppliedModel.find({ jobs: req.body.jobid, posted_by: req.user._id });
     console.log(Allied_Data)
     const arrX = await Promise.all(
       Allied_Data.map(async (data) => {
         const SignUpDetails = await SignUpModel.findById(data.user_by);
-        
-        try { 
-    
-          var IDmodel = await ProfileModel.findOne({contactNumber:SignUpDetails.phoneNumber})
+
+        try {
+
+          var IDmodel = await ProfileModel.findOne({ contactNumber: SignUpDetails.phoneNumber })
         } catch (error) {
           var IDmodel = "No profile is created. Please create one first."
         }
-        
+
         try {
           var getImages = await UserProfileImages.findById(IDmodel.profileImages)
-          
+
         } catch (error) {
           var getImages = "no images"
         }
-      
-        if(IDmodel===null ||IDmodel===undefined ){
+
+        if (IDmodel === null || IDmodel === undefined) {
           var IDmodel = "No profile is created. Please create one first."
         }
-  
+
         const image = await PromoterProfileImages.findById(SignUpDetails.job_images)
         const front_image = image && image.promoterImages[0]
-        const userProfile = Object.assign( IDmodel,{profileImages:getImages})
-        
+        const userProfile = Object.assign(IDmodel, { profileImages: getImages })
+
         return {
           user_approved: data.status,
           SignUpDetails,
@@ -216,12 +258,12 @@ Progressrouter.get(
   "/promoterAllJobsStatus",
   isPromoterAuth,
   expressAsyncHandler(async (req, res) => {
-    const postedBY = await AppliedModel.find({posted_by:req.user._id})
-    
-    const findalData = await Promise.all(postedBY.map(async(data)=>{
+    const postedBY = await AppliedModel.find({ posted_by: req.user._id })
+
+    const findalData = await Promise.all(postedBY.map(async (data) => {
 
       const job = await Jobmodel.findById(data.jobs).lean().exec()
-      const newJob = Object.assign(job,{"status":data.job_status})
+      const newJob = Object.assign(job, { "status": data.job_status })
 
       return {
         newJob
@@ -241,7 +283,7 @@ Progressrouter.get(
       {
         $match: {
           job_status: 'Completed',
-          user_by:req.user._id
+          user_by: req.user._id
         }
       },
       {
@@ -257,9 +299,9 @@ Progressrouter.get(
         if (result.length > 0) {
           const totalPrice = result[0].totalPrice;
           const totalCount = result[0].totalCount;
-          res.status(200).json({"Total_Price":totalPrice,"Total_Completed_Jobs":totalCount})
+          res.status(200).json({ "Total_Price": totalPrice, "Total_Completed_Jobs": totalCount })
         } else {
-          res.status(200).json({"Total_Price":0,"Total_Completed_Jobs":0})
+          res.status(200).json({ "Total_Price": 0, "Total_Completed_Jobs": 0 })
 
         }
       })
@@ -275,26 +317,26 @@ Progressrouter.put(
   isAdminAuth,
   expressAsyncHandler(async (req, res) => {
     console.log(req.body)
-    await Jobmodel.updateOne({_id:req.body.userid},req.body.data)
-    .then(data=>{
-      res.status(200).send({"message":"User Approved and Job status Updated"})
-    })
-    .catch((err)=>{
-      res.status(400).send({"message":"User does not exists or id mis-match"})
-    })
+    await Jobmodel.updateOne({ _id: req.body.userid }, req.body.data)
+      .then(data => {
+        res.status(200).send({ "message": "User Approved and Job status Updated" })
+      })
+      .catch((err) => {
+        res.status(400).send({ "message": "User does not exists or id mis-match" })
+      })
   })
 
-    //   { _id: object_id, "job_code.job_name": job_id },
+  //   { _id: object_id, "job_code.job_name": job_id },
 
-    //   {
-    //     $set: {
-    //       "job_code.$.status": status,
-    //     },
-    //   },
-    //   { multi: true }
-    // );
+  //   {
+  //     $set: {
+  //       "job_code.$.status": status,
+  //     },
+  //   },
+  //   { multi: true }
+  // );
 
-    // res.status(200).send(saveProgess);
+  // res.status(200).send(saveProgess);
 );
 
 export default Progressrouter;
