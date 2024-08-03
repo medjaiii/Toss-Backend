@@ -109,7 +109,7 @@ EmailRouter.post(
         res.status(400).send({ "message": "Password do not match" })
       } else {
 
-        await PromoterSignUpModel.findOneAndUpdate({ "email": req.body.email }, { "password": bcrypt.hashSync(req.body.password, 8), }).exec(function (err, mess) {
+        await PromoterSignUpModel.findOneAndUpdate({ "work_email": req.body.email }, { "password": bcrypt.hashSync(req.body.password, 8), }).exec(function (err, mess) {
           if (err) {
             res.status(400).send({ "message": err })
           } else {
