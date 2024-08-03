@@ -1,6 +1,7 @@
 import express from "express";
 import expressAsyncHandler from "express-async-handler";
 import SignUpModel from "../sign_up_api/model/SignUpModel.js";
+import PromoterSignUpModel from "../sign_up_api/model/PromoterSignUpModel.js";
 import bcrypt from "bcryptjs";
 import dotenv from "dotenv"
 import nodemailer from "nodemailer"
