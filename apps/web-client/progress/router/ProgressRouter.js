@@ -239,7 +239,7 @@ Progressrouter.post(
 
         const image = await PromoterProfileImages.findById(SignUpDetails.job_images)
         const front_image = image && image.promoterImages[0]
-        const userProfile = Object.assign(IDmodel, { profileImages: getImages })
+        const userProfile = Object.assign(IDmodel, { profileImages: getImages, frontImage: front_image })
 
         return {
           user_approved: data.status,
