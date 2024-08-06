@@ -297,11 +297,15 @@ UserProfileRouter.put(
 
 UserProfileRouter.delete("/deleteUserAccount", expressAsyncHandler(async (req, res) => {
   console.log(">>", req.body)
-  const job = await SignUpModel.findById(req.body.userid)
-  if (!job) {
+  const userSigninDetails = await SignUpModel.findById(req.body.userid)
+  const userProfile = await SignUpModel.findById(req.body.userid)
+  if (!userSigninDetails) {
     res.status(400).send({ "message": 'User not found' });
   } else {
-    await job.remove()
+    await userSigninDetails.remove()
+    if (userProfile) {
+      await userProfile.remove()
+    }
     res.status(400).send({ "message": "User Deleted" })
   }
 
