@@ -297,7 +297,7 @@ UserProfileRouter.put(
 
 UserProfileRouter.delete("/deleteUserAccount", expressAsyncHandler(async (req, res) => {
   console.log(">>", req.body)
-  const job = await ProfileModel.findById(req.body.userid)
+  const job = await SignUpModel.findById(req.body.userid)
   if (!job) {
     res.status(400).send({ "message": 'User not found' });
   } else {
