@@ -1,7 +1,7 @@
 import bcrypt from "bcryptjs";
 import express from "express";
 import expressAsyncHandler from "express-async-handler";
-import uploadFile, { uploadSingle} from "../../../../Multer_config.js";
+import uploadFile, { uploadSingle } from "../../../../Multer_config.js";
 import { generateToken, isAuth } from "../../util.js";
 import PromoterProfileImages from "../model/PromoterImagesModel.js";
 import SignUpModel from "../model/SignUpModel.js";
@@ -45,12 +45,12 @@ SignUpRouter.post(
     const getId = (await userImages.save())._id;
 
     const User = new SignUpModel({
-        name: req.body.name,
-        email: req.body.email,
-        phoneNumber:  req.body.phoneNumber,
-        currentLocation: req.body.currentLocation,
-        password: bcrypt.hashSync(req.body.password, 8),
-        job_images: getId
+      name: req.body.name,
+      email: req.body.email,
+      phoneNumber: req.body.phoneNumber,
+      currentLocation: req.body.currentLocation,
+      password: bcrypt.hashSync(req.body.password, 8),
+      job_images: getId
     });
 
     const userProfileImages = new UserProfileImages({
@@ -62,124 +62,127 @@ SignUpRouter.post(
     const UserProfile = new ProfileModel({
       fullname: req.body.name,
       email: req.body.email,
-      area: req.body.currentLocation ? req.body.currentLocation: "",
-      contactNumber: req.body.phoneNumber ? req.body.phoneNumber: "" ,
-      city: req.body.currentLocation ? req.body.currentLocation :"",
-      about: req.body.about ? req.body.about: "" ,
-      previousExpereince: req.body.previousExpereince ? req.body.previousExpereince:"",
-      skills: req.body.skills ? req.body.skills :[],
-      height:req.body.height ? req.body.height:"",
+      area: req.body.currentLocation ? req.body.currentLocation : "",
+      contactNumber: req.body.phoneNumber ? req.body.phoneNumber : "",
+      city: req.body.currentLocation ? req.body.currentLocation : "",
+      about: req.body.about ? req.body.about : "",
+      previousExpereince: req.body.previousExpereince ? req.body.previousExpereince : "",
+      skills: req.body.skills ? req.body.skills : [],
+      height: req.body.height ? req.body.height : "",
     });
 
     const saveProfile = await UserProfile.save();
-    
-    const getUserData = await SignUpModel.exists({email:req.body.email})
-    if (getUserData){
-      const findUser = await SignUpModel.findOne({_id:getUserData._id})
+
+    const getUserData = await SignUpModel.exists({ email: req.body.email })
+    if (getUserData) {
+      const findUser = await SignUpModel.findOne({ _id: getUserData._id })
       const getVerifiedStatus = findUser.isVerified
-      
-      if(getVerifiedStatus==="true"){
+
+      if (getVerifiedStatus === "true") {
         const imageLink = await PromoterProfileImages.findById(findUser.job_images)
-        const updatedUser = Object.assign(findUser,{job_images:imageLink})
+        const updatedUser = Object.assign(findUser, { job_images: imageLink })
         res.status(200).send({
           updatedUser,
           saveProfile,
-          token:generateToken(findUser)
-        })        
-      }else{
+          token: generateToken(findUser)
+        })
+      } else {
         await client.verify
+          .services(SERVICE_SID)
+          .verifications.create({
+            to: `+${91}${req.body.phoneNumber}`,
+            channel: "sms",
+          });
+
+        await SignUpModel.findOneAndUpdate({ _id: getUserData._id }, {
+          "$set": {
+            "name": req.body.name, "email": req.body.email, "phoneNumber": req.body.phoneNumber, "currentLocation": req.body.currentLocation, 'password': bcrypt.hashSync(req.body.password, 8), "job_images": getId
+          }
+        }).exec(function (err, user) {
+          console.log(user)
+        })
+        res.status(200).send({
+          "message": `User is not verfied. OTP Code Sent!`
+        })
+      }
+    } else {
+      await User.save()
+      await client.verify
         .services(SERVICE_SID)
         .verifications.create({
           to: `+${91}${req.body.phoneNumber}`,
           channel: "sms",
         });
-        
-        await SignUpModel.findOneAndUpdate({_id:getUserData._id},{"$set":{"name":req.body.name,"email": req.body.email,"phoneNumber":  req.body.phoneNumber,"currentLocation": req.body.currentLocation,'password': bcrypt.hashSync(req.body.password, 8),"job_images": getId
-      }}).exec(function(err,user){
-        console.log(user)
-      })
-        res.status(200).send({
-            "message":`User is not verfied. OTP Code Sent!`
-        })       
-      }  
-    }else{
-      await User.save()
-      await client.verify
-      .services(SERVICE_SID)
-      .verifications.create({
-        to: `+${91}${req.body.phoneNumber}`,
-        channel: "sms",
-      });
-  
+
       res.status(200).send({
-          "message":`User Does Not Exists. OTP Code Sent!`  
+        "message": `User Does Not Exists. OTP Code Sent!`
       })
     }
 
   })
 );
 
-SignUpRouter.post("/signin",expressAsyncHandler(async (req,res)=>{
+SignUpRouter.post("/signin", expressAsyncHandler(async (req, res) => {
 
   // we cannot signup using username as UX is not available for username
-  const findUser = await SignUpModel.findOne({email:req.body.email})
-  if(findUser){
-    if(bcrypt.compareSync(req.body.password,findUser.password)){
-      console.log(findUser.isVerified==="true")
-      if(findUser.isVerified==="true"){
+  const findUser = await SignUpModel.findOne({ email: req.body.email })
+  if (findUser) {
+    if (bcrypt.compareSync(req.body.password, findUser.password)) {
+      console.log(findUser.isVerified === "true")
+      if (findUser.isVerified === "true") {
         const imageLink = await PromoterProfileImages.findById(findUser.job_images)
-        const updatedUser = Object.assign(findUser,{job_images:imageLink})
+        const updatedUser = Object.assign(findUser, { job_images: imageLink })
 
         res.status(200).send({
           updatedUser,
-          token:generateToken(findUser)
+          token: generateToken(findUser)
         })
 
-      }else{
+      } else {
         res.status(400).send({
-          "message":"User is not Verified. Please Verify"
+          "message": "User is not Verified. Please Verify"
         })
       }
-      
-    }else{
-      res.status(400).send({"message":"Password Do not Match"})
+
+    } else {
+      res.status(400).send({ "message": "Password Do not Match" })
     }
-  }else{
-    res.status(400).send({message:"Invalid Email or password"})
+  } else {
+    res.status(400).send({ message: "Account not found. Please check your credentials" })
   }
 
 })
 )
 
-SignUpRouter.delete("/deleteimage/:id",isAuth,expressAsyncHandler(async(req,res)=>{
+SignUpRouter.delete("/deleteimage/:id", isAuth, expressAsyncHandler(async (req, res) => {
   const id = req.params.id
-  const findUser = await SignUpModel.findOne({_id:req.user._id})
-  await PromoterProfileImages.findOneAndUpdate({_id:findUser.job_images},{"$pull":{"promoterImages":{_id:id}}},{safe:true,multi:false})
-  .then((data)=>{
-    res.status(200).json(data)
-  })
-  .catch((err)=>{
-    res.status(400).json({"message":err})
-  })
+  const findUser = await SignUpModel.findOne({ _id: req.user._id })
+  await PromoterProfileImages.findOneAndUpdate({ _id: findUser.job_images }, { "$pull": { "promoterImages": { _id: id } } }, { safe: true, multi: false })
+    .then((data) => {
+      res.status(200).json(data)
+    })
+    .catch((err) => {
+      res.status(400).json({ "message": err })
+    })
 }))
 
 SignUpRouter.put(
-  "/editImages",isAuth,uploadFile,
-  expressAsyncHandler(async (req, res,next) => {
+  "/editImages", isAuth, uploadFile,
+  expressAsyncHandler(async (req, res, next) => {
     const images = req.files.reduce(
       (acc, image) => [...acc, { name: image.location }],
       []
     );
 
-    const findUser = await SignUpModel.findOne({_id:req.user._id})
+    const findUser = await SignUpModel.findOne({ _id: req.user._id })
 
-    await PromoterProfileImages.findOneAndUpdate({_id:findUser.job_images},{"$push":{promoterImages:images}},option)
-      .then((data)=>{
+    await PromoterProfileImages.findOneAndUpdate({ _id: findUser.job_images }, { "$push": { promoterImages: images } }, option)
+      .then((data) => {
         res.status(200).json(data)
       })
-      .catch((err)=>{
-        res.status(400).json({"message":err})
-      })               
+      .catch((err) => {
+        res.status(400).json({ "message": err })
+      })
   })
 );
 
