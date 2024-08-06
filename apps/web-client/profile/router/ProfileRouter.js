@@ -298,14 +298,14 @@ UserProfileRouter.put(
 UserProfileRouter.delete("/deleteUserAccount", expressAsyncHandler(async (req, res) => {
   console.log(">>", req.body)
   const userSigninDetails = await SignUpModel.findOne({ phoneNumber: req.body.phoneNumber })
-  // const userProfile = await ProfileModel.findById(req.body.userid)
+  const userProfile = await ProfileModel.findById(req.body.userid)
   if (!userSigninDetails) {
     res.status(400).send({ "message": 'User not found' });
   } else {
     await userSigninDetails.remove()
-    // if (userProfile) {
-    //   await userProfile.remove()
-    // }
+    if (userProfile) {
+      await userProfile.remove()
+    }
     res.status(200).send({ "message": "Account Deleted Successfully" })
   }
 
