@@ -318,7 +318,7 @@ UserProfileRouter.delete("/deleteuser", isAdminAuth, expressAsyncHandler(async (
     res.status(400).send({ "message": 'User not found' });
   } else {
     await job.remove()
-    res.status(400).send({ "message": "User Deleted" })
+    res.status(200).send({ "message": "Account Deleted Successfully" })
   }
 
 }))
