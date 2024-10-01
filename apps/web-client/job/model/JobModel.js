@@ -18,6 +18,8 @@ const jobSchema = new Mongoose.Schema(
     requirement: { type: String },
     workers: { type: Number },
     address: { type: String },
+    addressLatitude: { type: String },
+    addressLongitude: { type: String },
     pincode: { type: String },
     duration: {
       startDuration: { type: String },

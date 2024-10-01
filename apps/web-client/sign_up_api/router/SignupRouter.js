@@ -4,6 +4,7 @@ import expressAsyncHandler from "express-async-handler";
 import uploadFile, { uploadSingle } from "../../../../Multer_config.js";
 import { generateToken, isAuth } from "../../util.js";
 import PromoterProfileImages from "../model/PromoterImagesModel.js";
+import PromoterProfileVideo from "../model/PromoterVideosModel.js";
 import SignUpModel from "../model/SignUpModel.js";
 import { createRequire } from "module";
 import dotenv from "dotenv"
@@ -185,6 +186,54 @@ SignUpRouter.put(
       })
   })
 );
+
+// SignUpRouter.put(
+//   "/editIntroVideo", isAuth, uploadFile,
+//   expressAsyncHandler(async (req, res, next) => {
+//     const introVideo = req.files[0].location;
+
+//     const findUser = await SignUpModel.findOne({ _id: req.user._id });
+
+//     await PromoterProfileVideo.findOneAndUpdate(
+//       { _id: findUser.job_images },
+//       {
+//         $set: { introVideo },
+//         $setOnInsert: { introVideo } // Create the field if it doesn't exist
+//       },
+//       option
+//     )
+//       .then((data) => {
+//         res.status(200).json(data);
+//       })
+//       .catch((err) => {
+//         res.status(400).json({ "message": err });
+//       });
+//   })
+// );
+
+SignUpRouter.put(
+  "/editIntroVideo", isAuth, uploadFile,
+  expressAsyncHandler(async (req, res, next) => {
+    const introVideo = req.files[0].location; // Assuming this is the video URL
+
+    try {
+      const findUser = await SignUpModel.findOne({ _id: req.user._id });
+
+      const updatedVideo = await PromoterProfileVideo.findOneAndUpdate(
+        { _id: findUser.job_images }, // Assuming job_images is the reference to the PromoterProfileVideo
+        {
+          $set: { promoterVideo: introVideo } // Update promoterVideo field
+        },
+        { new: true, upsert: true } // `new: true` returns the updated doc, `upsert: true` creates if doesn't exist
+      );
+
+      res.status(200).json(updatedVideo);
+    } catch (err) {
+      res.status(400).json({ message: err.message });
+    }
+  })
+);
+
 
 
 
