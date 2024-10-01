@@ -1,7 +1,7 @@
 import bcrypt from "bcryptjs";
 import express from "express";
 import expressAsyncHandler from "express-async-handler";
-import { uploadIntroVideo, uploadFile } from "../../../../Multer_config.js";
+import uploadFile, { handleIntroVideoUpload } from "../../../../Multer_config.js";
 import { generateToken, isAuth } from "../../util.js";
 import PromoterProfileImages from "../model/PromoterImagesModel.js";
 import PromoterProfileVideo from "../model/PromoterVideosModel.js";
@@ -212,7 +212,7 @@ SignUpRouter.put(
 // );
 
 SignUpRouter.put(
-  "/editIntroVideo", isAuth, uploadIntroVideo,
+  "/editIntroVideo", isAuth, handleIntroVideoUpload,
   expressAsyncHandler(async (req, res, next) => {
     const introVideo = req.files[0].location; // Assuming this is the video URL
 

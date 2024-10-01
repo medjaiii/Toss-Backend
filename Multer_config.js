@@ -99,3 +99,4 @@ const handleIntroVideoUpload = (req, res, next) => {
 // }
 
 export default uploadFile
+export { handleIntroVideoUpload };
