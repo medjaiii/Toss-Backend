@@ -205,7 +205,7 @@ UserProfileRouter.get("/userprofile", isAuth, uploadFile, expressAsyncHandler(as
     }
 
     // Fetch user images
-    let getImages = await UserProfileImages.findById(IDmodel.profileImages) || "no images";
+    let getImages = await UserProfileImages.findById(IDmodel.profileImages)
 
     // Find the user in the SignUpModel
     const findUser = await SignUpModel.findOne({ _id: req.user._id });
