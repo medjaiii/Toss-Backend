@@ -165,72 +165,75 @@ UserProfileRouter.delete(
   })
 );
 
-UserProfileRouter.get("/userprofile", isAuth, uploadFile, expressAsyncHandler(async (req, res, next) => {
-  try {
-
-    var IDmodel = await ProfileModel.findOne({ contactNumber: req.user.phoneNumber }).lean().exec()
-  } catch (error) {
-    var IDmodel = "No profile is created. Please create one first."
-  }
-
-  try {
-    var getImages = await UserProfileImages.findById(IDmodel.profileImages)
-
-  } catch (error) {
-    var getImages = "no images"
-  }
-
-  if (IDmodel === null || IDmodel === undefined) {
-    var IDmodel = "No profile is created. Please create one first."
-  }
-
-  const findUser = await SignUpModel.findOne({ _id: req.user._id })
-
-  const imageLink = await PromoterProfileImages.findById(findUser.job_images)
-
-  const userProfile = Object.assign(IDmodel, { profileImages: getImages })
-  // Get video related to the job, make sure to handle cases where it's not available
-  const promoterVideo = await PromoterProfileVideo.findById(findUser.intro_video) || { promoterVideo: null };
-
-  const news = Object.assign(userProfile, { "FrontImage": imageLink.promoterImages, "promoterVideo": promoterVideo.promoterVideo })
-
-  res.status(200).send(news)
-
-}))
-
-// UserProfileRouter.get("/userprofile", isAuth, expressAsyncHandler(async (req, res) => {
+// UserProfileRouter.get("/userprofile", isAuth, uploadFile, expressAsyncHandler(async (req, res, next) => {
 //   try {
-//     // Find the user's profile by contact number
-//     let IDmodel = await ProfileModel.findOne({ contactNumber: req.user.phoneNumber }).lean().exec();
-//     if (!IDmodel) {
-//       return res.status(404).send("No profile is created. Please create one first.");
-//     }
 
-//     // Get user images
-//     const getImages = await UserProfileImages.findById(IDmodel.profileImages) || "no images";
+//     var IDmodel = await ProfileModel.findOne({ contactNumber: req.user.phoneNumber }).lean().exec()
+//   } catch (error) {
+//     var IDmodel = "No profile is created. Please create one first."
+//   }
 
-//     // Find the user details in the SignUpModel
-//     const findUser = await SignUpModel.findOne({ _id: req.user._id });
-
-//     // Get images related to the job
-//     const imageLink = await PromoterProfileImages.findById(findUser.job_images) || { promoterImages: [] };
-
-//     // Get video related to the job, make sure to handle cases where it's not available
-//     const promoterVideo = await PromoterProfileVideo.findById(findUser.job_images) || { promoterVideo: null };
-
-//     // Construct the final user profile response
-//     const userProfile = Object.assign({}, IDmodel, {
-//       profileImages: getImages,
-//       FrontImage: imageLink.promoterImages,
-//       promoterVideo: promoterVideo.promoterVideo // Add video info if available, or null if not
-//     });
-
-//     res.status(200).send(userProfile);
+//   try {
+//     var getImages = await UserProfileImages.findById(IDmodel.profileImages)
 
 //   } catch (error) {
-//     res.status(500).json({ message: error.message });
+//     var getImages = "no images"
 //   }
-// }));
+
+//   if (IDmodel === null || IDmodel === undefined) {
+//     var IDmodel = "No profile is created. Please create one first."
+//   }
+
+//   const findUser = await SignUpModel.findOne({ _id: req.user._id })
+
+//   const imageLink = await PromoterProfileImages.findById(findUser.job_images)
+
+//   const userProfile = Object.assign(IDmodel, { profileImages: getImages })
+
+//   const news = Object.assign(userProfile, { "FrontImage": imageLink.promoterImages })
+
+//   res.status(200).send(news)
+
+// }))
+
+UserProfileRouter.get("/userprofile", isAuth, uploadFile, expressAsyncHandler(async (req, res, next) => {
+  try {
+    // Fetch user profile by contact number
+    let IDmodel = await ProfileModel.findOne({ contactNumber: req.user.phoneNumber }).lean().exec();
+    if (!IDmodel) {
+      return res.status(404).send("No profile is created. Please create one first.");
+    }
+
+    // Fetch user images
+    let getImages = await UserProfileImages.findById(IDmodel.profileImages) || "no images";
+
+    // Find the user in the SignUpModel
+    const findUser = await SignUpModel.findOne({ _id: req.user._id });
+
+    // Get job images linked to the user
+    let imageLink = await PromoterProfileImages.findById(findUser.job_images) || { promoterImages: [] };
+
+    // Check if intro_video exists before fetching the promoterVideo
+    let promoterVideo = null;
+    if (findUser.intro_video) {
+      const videoData = await PromoterProfileVideo.findById(findUser.intro_video);
+      promoterVideo = videoData ? videoData.promoterVideo : null;
+    }
+
+    // Combine all the user data into the response object
+    const userProfile = Object.assign({}, IDmodel, {
+      profileImages: getImages,
+      FrontImage: imageLink.promoterImages,
+      promoterVideo: promoterVideo // Only include this if intro_video exists
+    });
+
+    res.status(200).send(userProfile);
+
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+}));
+
 
 UserProfileRouter.get("/getuserprofileforpromoter", isPromoterAuth, uploadFile, expressAsyncHandler(async (req, res, next) => {
 
