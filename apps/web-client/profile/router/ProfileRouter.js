@@ -180,6 +180,12 @@ UserProfileRouter.get("/userprofile", isAuth, uploadFile, expressAsyncHandler(as
     var getImages = "no images"
   }
 
+  let promoterVideo = null;
+  if (findUser.intro_video) {
+    const videoData = await PromoterProfileVideo.findById(findUser.intro_video);
+    promoterVideo = videoData ? videoData.promoterVideo : null;
+  }
+
   if (IDmodel === null || IDmodel === undefined) {
     var IDmodel = "No profile is created. Please create one first."
   }
@@ -188,28 +194,14 @@ UserProfileRouter.get("/userprofile", isAuth, uploadFile, expressAsyncHandler(as
 
   const imageLink = await PromoterProfileImages.findById(findUser.job_images)
 
-  // const userProfile = Object.assign(IDmodel, { profileImages: getImages })
-
-  let promoterVideo = null;
-  if (findUser.intro_video) {
-    const videoData = await PromoterProfileVideo.findById(findUser.intro_video);
-    promoterVideo = videoData ? videoData.promoterVideo : null;
-  }
-
-  // Combine all the user data into the response object
-  const userProfile = Object.assign({}, IDmodel, {
-    profileImages: getImages,
-    FrontImage: imageLink.promoterImages,
-    promoterVideo: promoterVideo // Only include this if intro_video exists
-  });
+  const userProfile = Object.assign(IDmodel, { profileImages: getImages, promoterIntroVideo: promoterVideo })
 
 
-  const news = Object.assign(userProfile, { "FrontImage": imageLink.promoterImages })
+  const news = Object.assign(userProfile, { "FrontImage": imageLink.promoterImages, "introVideo": promoterVideo })
 
   res.status(200).send(news)
 
 }))
-
 
 UserProfileRouter.get("/getuserprofileforpromoter", isPromoterAuth, uploadFile, expressAsyncHandler(async (req, res, next) => {
 
