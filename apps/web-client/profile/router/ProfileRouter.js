@@ -198,24 +198,29 @@ UserProfileRouter.delete(
 
 UserProfileRouter.get("/userprofile", isAuth, expressAsyncHandler(async (req, res) => {
   try {
+    // Find the user's profile by contact number
     let IDmodel = await ProfileModel.findOne({ contactNumber: req.user.phoneNumber }).lean().exec();
     if (!IDmodel) {
       return res.status(404).send("No profile is created. Please create one first.");
     }
 
+    // Get user images
     const getImages = await UserProfileImages.findById(IDmodel.profileImages) || "no images";
 
+    // Find the user details in the SignUpModel
     const findUser = await SignUpModel.findOne({ _id: req.user._id });
 
+    // Get images related to the job
     const imageLink = await PromoterProfileImages.findById(findUser.job_images) || { promoterImages: [] };
 
-    // Fetch promoter video details
-    const promoterVideo = await PromoterProfileVideo.findById(findUser.job_images) || { promoterVideo: "No video available" };
+    // Get video related to the job, make sure to handle cases where it's not available
+    const promoterVideo = await PromoterProfileVideo.findById(findUser.job_images) || { promoterVideo: null };
 
+    // Construct the final user profile response
     const userProfile = Object.assign({}, IDmodel, {
       profileImages: getImages,
       FrontImage: imageLink.promoterImages,
-      promoterVideo: promoterVideo.promoterVideo // Add video info to the response
+      promoterVideo: promoterVideo.promoterVideo // Add video info if available, or null if not
     });
 
     res.status(200).send(userProfile);

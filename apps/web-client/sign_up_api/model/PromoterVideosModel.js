@@ -3,7 +3,8 @@ import mongoose from "mongoose";
 const PromoterProfileVideoSchema = mongoose.Schema({
     promoterVideo: {
         type: String,
-        required: [true, "Please provide a video URL"]
+        required: false, // Make the field optional
+        default: null    // Default to null when the video is not available
     }
 });
 
