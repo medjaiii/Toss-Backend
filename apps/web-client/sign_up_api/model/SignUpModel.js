@@ -16,12 +16,13 @@ const signupSchema = new Mongoose.Schema(
       required: [false, "current location required"],
     },
     password: { type: String, required: [true, "password requred"] },
-    job_images:{ type: Mongoose.Schema.Types.ObjectId,ref :"PromoterProfileImages"},
-    createdDate:{
-      type:Date,
-      default:Date.now
+    job_images: { type: Mongoose.Schema.Types.ObjectId, ref: "PromoterProfileImages" },
+    intro_video: { type: Mongoose.Schema.Types.ObjectId, ref: "PromoterProfileVideo" },
+    createdDate: {
+      type: Date,
+      default: Date.now
     },
-    isVerified:{type:String,default:false},
+    isVerified: { type: String, default: false },
   },
   {
     timestamps: true,
@@ -29,8 +30,8 @@ const signupSchema = new Mongoose.Schema(
 );
 
 Mongoose.pluralize(null)
-signupSchema.index({email:1},{unique:true})
-signupSchema.index({phoneNumber:1},{unique:true})
+signupSchema.index({ email: 1 }, { unique: true })
+signupSchema.index({ phoneNumber: 1 }, { unique: true })
 
 const SignUpModel = Mongoose.model("SignUp", signupSchema);
 

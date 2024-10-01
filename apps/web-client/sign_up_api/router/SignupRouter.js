@@ -220,7 +220,7 @@ SignUpRouter.put(
       const findUser = await SignUpModel.findOne({ _id: req.user._id });
 
       const updatedVideo = await PromoterProfileVideo.findOneAndUpdate(
-        { _id: findUser.job_images }, // Assuming job_images is the reference to the PromoterProfileVideo
+        { _id: findUser.intro_video }, // Assuming job_images is the reference to the PromoterProfileVideo
         {
           $set: { promoterVideo: introVideo } // Update promoterVideo field
         },
