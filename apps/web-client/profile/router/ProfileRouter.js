@@ -180,12 +180,6 @@ UserProfileRouter.get("/userprofile", isAuth, uploadFile, expressAsyncHandler(as
     var getImages = "no images"
   }
 
-  let promoterVideo = null;
-  if (findUser.intro_video) {
-    const videoData = await PromoterProfileVideo.findById(findUser.intro_video);
-    promoterVideo = videoData ? videoData.promoterVideo : null;
-  }
-
   if (IDmodel === null || IDmodel === undefined) {
     var IDmodel = "No profile is created. Please create one first."
   }
@@ -194,10 +188,9 @@ UserProfileRouter.get("/userprofile", isAuth, uploadFile, expressAsyncHandler(as
 
   const imageLink = await PromoterProfileImages.findById(findUser.job_images)
 
-  const userProfile = Object.assign(IDmodel, { profileImages: getImages, promoterIntroVideo: promoterVideo })
+  const userProfile = Object.assign(IDmodel, { profileImages: getImages })
 
-
-  const news = Object.assign(userProfile, { "FrontImage": imageLink.promoterImages, "introVideo": promoterVideo })
+  const news = Object.assign(userProfile, { "FrontImage": imageLink.promoterImages })
 
   res.status(200).send(news)
 
