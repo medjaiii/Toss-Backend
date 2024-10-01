@@ -190,7 +190,13 @@ UserProfileRouter.get("/userprofile", isAuth, uploadFile, expressAsyncHandler(as
 
   const userProfile = Object.assign(IDmodel, { profileImages: getImages })
 
-  const news = Object.assign(userProfile, { "FrontImage": imageLink.promoterImages })
+  let promoterVideo = null;
+  if (findUser.intro_video) {
+    const videoData = await PromoterProfileVideo.findById(findUser.intro_video);
+    promoterVideo = videoData ? videoData.promoterVideo : null;
+  }
+
+  const news = Object.assign(userProfile, { "FrontImage": imageLink.promoterImages, "promoterVideo": promoterVideo })
 
   res.status(200).send(news)
 
