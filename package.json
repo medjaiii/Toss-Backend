@@ -29,6 +29,7 @@
     "multer-s3": "^2.9.1",
     "naukri": "file:",
     "nodemailer": "^6.8.0",
+    "socket.io": "^4.8.0",
     "twilio": "^3.83.4"
   },
   "devDependencies": {

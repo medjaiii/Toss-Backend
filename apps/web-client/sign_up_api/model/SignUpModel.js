@@ -18,6 +18,8 @@ const signupSchema = new Mongoose.Schema(
     password: { type: String, required: [true, "password requred"] },
     job_images: { type: Mongoose.Schema.Types.ObjectId, ref: "PromoterProfileImages" },
     intro_video: { type: Mongoose.Schema.Types.ObjectId, ref: "PromoterProfileVideo" },
+    location: { type: Mongoose.Schema.Types.ObjectId, ref: 'Location' }, // Reference to the latest location document
+    chat: { type: Mongoose.Schema.Types.ObjectId, ref: 'Chat' }, // Reference to a single chat document
     createdDate: {
       type: Date,
       default: Date.now

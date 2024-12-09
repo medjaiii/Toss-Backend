@@ -10,8 +10,9 @@ import { createRequire } from "module";
 import dotenv from "dotenv"
 import ProfileModel from "../../profile/model/UserProfile.js";
 import UserProfileImages from "../../profile/model/UserImages.js";
-import mongoose from "mongoose"
 import { option } from "../../../../DataBaseConstants.js";
+// const Chat = require('../model/chat.js');
+import Chat from '../model/chat.js';
 
 dotenv.config()
 
@@ -234,6 +235,43 @@ SignUpRouter.put(
   })
 );
 
+
+// API to get all chats between two user IDs
+SignUpRouter.get('/chat/:userId1/:userId2', async (req, res) => {
+  const { userId1, userId2 } = req.params;
+  const page = parseInt(req.query.page) || 1;  // Default to page 1 if not provided
+  const limit = parseInt(req.query.limit) || 20;  // Default to 20 messages per page
+  const skip = (page - 1) * limit;  // Calculate the number of messages to skip
+
+  try {
+    const chat = await Chat.findOne({
+      $or: [
+        { user1: userId1, user2: userId2 },
+        { user1: userId2, user2: userId1 }
+      ]
+    }).populate('messages.senderId', 'name email');  // Populate sender info
+
+    if (!chat) {
+      return res.status(404).json({ message: 'Chat not found' });
+    }
+
+    // Sort messages by timestamp in descending order (latest first)
+    const sortedMessages = chat.messages.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+
+    // Paginate messages by using the `slice` method
+    const paginatedMessages = sortedMessages.slice(skip, skip + limit);
+
+    res.json({
+      page,
+      limit,
+      totalMessages: sortedMessages.length,  // Total number of messages in the chat
+      totalPages: Math.ceil(sortedMessages.length / limit),  // Total number of pages
+      messages: paginatedMessages,  // Return the paginated messages
+    });
+  } catch (err) {
+    res.status(500).json({ error: 'Error fetching chat messages' });
+  }
+});
 
 
 
