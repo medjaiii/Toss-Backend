@@ -1,4 +1,4 @@
-import  express  from "express"
+import express from "express"
 import mongoose from "mongoose"
 import dotenv from "dotenv"
 import SignUpRouter from "./apps/web-client/sign_up_api/router/SignupRouter.js"
@@ -10,10 +10,12 @@ import SmsRouter from "./apps/web-client/sms/TwiliioApi.js"
 import EmailRouter from "./apps/web-client/email/EmailRouter.js"
 import AdminSignup from "./apps/web-client/sign_up_api/router/AdminSignup.js"
 import cors from "cors"
-
+import websocketSetup from "./apps/web-client/sign_up_api/router/chat_location_socket.js"
+import { createServer } from 'node:http';
 dotenv.config()
 
 const app = express()
+const server = createServer(app)
 
 app.use(cors())
 app.use(express.json())
@@ -40,9 +42,9 @@ app.use((err,req,res,next)=>{
     res.status(400).send({message:err.message,field:err.field})
     next()
 })
-
+websocketSetup(server)
 //all port configuration
-const port  = process.env.PORT || 5000
-app.listen(port,()=>{
+const port  = process.env.PORT || 5001
+server.listen(port,()=>{
     console.log(`Serve at http://localhost:${port}`)
 })
