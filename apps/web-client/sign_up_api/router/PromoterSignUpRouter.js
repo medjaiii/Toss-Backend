@@ -22,7 +22,7 @@ PromoterSignup.post(
 
     const getId = (await userImages.save())._id;
 
-    const promoterObject = Object.assign(req.body, {job_images: getId },{password:bcrypt.hashSync(req.body.password, 8)});
+    const promoterObject = Object.assign(req.body, { job_images: getId }, { password: bcrypt.hashSync(req.body.password, 8) });
 
     const sinupModel = new PromoterSignUpModel(promoterObject);
 
@@ -39,71 +39,72 @@ PromoterSignup.post(
   })
 );
 
-PromoterSignup.post("/signin",expressAsyncHandler(async(req,res,next)=>{
+PromoterSignup.post("/signin", expressAsyncHandler(async (req, res, next) => {
 
-  const findUser = await PromoterSignUpModel.findOne({work_email:req.body.email})
-  if(findUser){
-    if(bcrypt.compareSync(req.body.password,findUser.password)){
+  const findUser = await PromoterSignUpModel.findOne({ work_email: req.body.email })
+  if (findUser) {
+    if (bcrypt.compareSync(req.body.password, findUser.password)) {
       const imageLink = await PromoterProfileImages.findById(findUser.job_images)
-      const updatedUser = Object.assign(findUser,{job_images:imageLink})
+      const updatedUser = Object.assign(findUser, { job_images: imageLink })
 
       res.status(200).send({
         updatedUser,
-        token:generatePromoterToken(updatedUser)
+        token: generatePromoterToken(updatedUser)
+      })
+      return
+    } else {
+      res.status(400).send({ message: "Invalid Email or password" })
+    }
+  } else {
+    res.status(404).send({ message: "User not found" })
+  }
+}))
+
+PromoterSignup.post("/forgotpasswod", expressAsyncHandler(async (req, res, next) => {
+
+  const findUser = await PromoterSignUpModel.findOne({ work_email: req.body.email })
+  if (findUser) {
+    if (bcrypt.compareSync(req.body.password, findUser.password)) {
+      const imageLink = await PromoterProfileImages.findById(findUser.job_images)
+      const updatedUser = Object.assign(findUser, { job_images: imageLink })
+
+      res.status(200).send({
+        updatedUser,
+        token: generatePromoterToken(findUser)
       })
       return
     }
   }
-  res.status(404).send({message:"Invalid Email or password"})
-      
+  res.status(404).send({ message: "Invalid Email or password" })
+
 
 }))
 
-PromoterSignup.post("/forgotpasswod",expressAsyncHandler(async(req,res,next)=>{
 
-  const findUser = await PromoterSignUpModel.findOne({work_email:req.body.email})
-  if(findUser){
-    if(bcrypt.compareSync(req.body.password,findUser.password)){
-      const imageLink = await PromoterProfileImages.findById(findUser.job_images)
-      const updatedUser = Object.assign(findUser,{job_images:imageLink})
+PromoterSignup.get("/getpromotersign", isPromoterAuth, expressAsyncHandler(async (req, res, next) => {
+  const findUser = await PromoterSignUpModel.findOne({ work_email: req.user.email })
+  if (findUser) {
+    const imageLink = await PromoterProfileImages.findById(findUser.job_images)
+    const updatedUser = Object.assign(findUser, { job_images: imageLink })
 
-      res.status(200).send({
-        updatedUser,
-        token:generatePromoterToken(findUser)
-      })
-      return
+    res.status(200).send({
+      updatedUser,
+    })
+    return
+  }
+  res.status(200).send({ message: "Invalid Email or password" })
+
+}))
+
+PromoterSignup.get("/getallpromoters", isAdminAuth, expressAsyncHandler(async (req, res, next) => {
+  PromoterSignUpModel.find({}).populate("job_images").exec((err, profiles) => {
+    if (err) {
+      res.send(err)
+    } else {
+      res.status(200).send(profiles)
     }
-  }
-  res.status(404).send({message:"Invalid Email or password"})
-      
+  })
 
-}))
-
-
-PromoterSignup.get("/getpromotersign",isPromoterAuth,expressAsyncHandler(async(req,res,next)=>{
-  const findUser = await PromoterSignUpModel.findOne({work_email:req.user.email})
-  if(findUser){
-      const imageLink = await PromoterProfileImages.findById(findUser.job_images)
-      const updatedUser = Object.assign(findUser,{job_images:imageLink})
-
-      res.status(200).send({
-        updatedUser,
-      })
-      return
-  }
-  res.status(200).send({message:"Invalid Email or password"})
-      
-}))
-
-PromoterSignup.get("/getallpromoters",isAdminAuth,expressAsyncHandler(async(req,res,next)=>{
-    PromoterSignUpModel.find({}).populate("job_images").exec((err, profiles) => {
-      if (err) {
-        res.send(err)
-      } else {
-        res.status(200).send(profiles)
-      }
-    })    
-      
 }))
 
 PromoterSignup.put(
@@ -111,19 +112,19 @@ PromoterSignup.put(
   isAdminAuth,
   expressAsyncHandler(async (req, res) => {
     console.log(req.body)
-    await PromoterSignUpModel.updateOne({_id:req.body.userid},req.body.data)
-    .then(data=>{
-      res.status(200).send({"message":"Promoter Updated"})
-    })
-    .catch((err)=>{
-      res.status(400).send({"message":"User does not exists or id mis-match"})
-    })
+    await PromoterSignUpModel.updateOne({ _id: req.body.userid }, req.body.data)
+      .then(data => {
+        res.status(200).send({ "message": "Promoter Updated" })
+      })
+      .catch((err) => {
+        res.status(400).send({ "message": "User does not exists or id mis-match" })
+      })
   })
 )
 
-PromoterSignup.delete("/deletepromoter",isAdminAuth,expressAsyncHandler(async(req,res)=>{
-  console.log(">>",req.body)
-  const job  = await PromoterSignUpModel.findById(req.body.userid)
+PromoterSignup.delete("/deletepromoter", isAdminAuth, expressAsyncHandler(async (req, res) => {
+  console.log(">>", req.body)
+  const job = await PromoterSignUpModel.findById(req.body.userid)
   res.send(job)
   // if (!job) {
   //   res.status(400).send({"message":'User not found'});
