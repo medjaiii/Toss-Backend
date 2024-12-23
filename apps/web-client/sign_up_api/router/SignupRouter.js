@@ -13,6 +13,9 @@ import UserProfileImages from "../../profile/model/UserImages.js";
 import { option } from "../../../../DataBaseConstants.js";
 // const Chat = require('../model/chat.js');
 import Chat from '../model/chat.js';
+import GroupChat from '../model/group_chat_schema.js';
+import Mongoose from "mongoose";
+import PromoterSignUpModel from "../model/PromoterSignUpModel.js";
 
 dotenv.config()
 
@@ -270,6 +273,163 @@ SignUpRouter.get('/chat/:userId1/:userId2', async (req, res) => {
     });
   } catch (err) {
     res.status(500).json({ error: 'Error fetching chat messages' });
+  }
+});
+
+
+/// api to create a group chat
+SignUpRouter.post('/group-chat', async (req, res) => {
+  const { groupName, groupDescription, memberIds } = req.body;
+
+  if (!groupName || !groupDescription || !memberIds || memberIds.length < 2) {
+    return res.status(400).json({ error: 'Group name, description and at least two members are required' });
+  }
+
+  try {
+    const groupChat = new GroupChat({
+      groupName,
+      groupDescription,
+      members: memberIds,
+    });
+
+    await groupChat.save();
+
+    res.status(200).json({ message: 'Group chat created successfully', groupChat });
+  } catch (err) {
+    res.status(500).json({ error: 'Error creating group chat' });
+  }
+});
+
+
+///api to fetch all group chats
+SignUpRouter.get('/group-chat/:groupId', async (req, res) => {
+  // expressAsyncHandler(async (req, res, next) => {
+  const { groupId } = req.params;
+  const page = parseInt(req.query.page) || 1;
+  const limit = parseInt(req.query.limit) || 20;
+  const skip = (page - 1) * limit;
+
+  try {
+    const groupChat = await GroupChat.findById(groupId);
+
+
+    console.log(groupChat);
+
+    if (!groupChat) {
+      return res.status(404).json({ message: 'Group chat not found' });
+    }
+
+    // Sort messages by timestamp
+    const sortedMessages = groupChat.messages.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+    const paginatedMessages = sortedMessages.slice(skip, skip + limit);
+
+    console.log(sortedMessages);
+
+    res.json({
+      page,
+      limit,
+      totalMessages: sortedMessages.length,
+      totalPages: Math.ceil(sortedMessages.length / limit),
+      messages: paginatedMessages,
+    });
+  } catch (err) {
+    res.status(500).json({ error: 'Error fetching group chat messages' });
+  }
+  // });
+});
+
+
+/// api to add new member to the group
+SignUpRouter.post('/group-chat/addMember', async (req, res) => {
+  const { groupId, userId } = req.body;
+
+  try {
+    // Find the group by ID
+    const group = await GroupChat.findById(groupId).populate('members', 'name email');
+
+    if (!group) {
+      return res.status(404).json({ message: 'Group not found' });
+    }
+
+    // Check if the user is already a member
+    if (group.members.some(member => member._id.toString() === userId)) {
+      return res.status(400).json({ message: 'User is already a member of the group' });
+    }
+
+    // Add the new member to the group
+    group.members.push(userId);
+    await group.save();
+
+    // Populate the newly updated members list for response
+    const updatedGroup = await GroupChat.findById(groupId).populate('members', 'name email');
+
+    res.status(200).json({
+      message: 'User added to the group successfully',
+      groupId: group._id,
+      members: updatedGroup.members, // Send the updated list of members
+    });
+  } catch (err) {
+    console.error('Error adding member to group:', err);
+    res.status(500).json({ error: 'An error occurred while adding the member to the group' });
+  }
+});
+
+
+/// get all the groups of particular user
+SignUpRouter.get('/groups/user/:userId', async (req, res) => {
+  const { userId } = req.params;
+
+  try {
+
+    let groupsResult = [];
+    // Find all groups where the user is a member
+    let groups = await GroupChat.find({ members: userId })
+      .select('groupName groupDescription members'); // Select only necessary fields
+
+
+    if (!groups || groups.length === 0) {
+      return res.status(200).json({ message: 'No groups found for this user', groups: [] });
+    }
+
+    console.log(groups);
+
+
+    for (let i = 0; i < groups.length; i++) {
+      var group = groups[i];
+      var members = [];
+      for (const memberId of group.members) {
+        console.log("member id: ", memberId);
+        const user = await SignUpModel.findOne({ _id: memberId })
+          .select('name email');
+        if (user) {
+          members.push(user);
+        } else {
+          const user = await PromoterSignUpModel.findOne({ _id: memberId })
+            .select('full_name as name, work_email as email');
+          if (user) {
+            members.push(user);
+            console.log(user);
+          }
+        }
+      }
+      groupsResult.push({
+        "_id": group.id,
+        "groupName": group.groupName,
+        "groupDescription": group.groupDescription,
+        "members": members,
+      })
+    }
+
+    // group.messages.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))
+
+    res.status(200).json({
+      message: 'Groups retrieved successfully',
+      totalGroups: groups.length,
+      groups: groupsResult,
+    });
+  } catch (err) {
+    console.error('Error fetching user groups:', err);
+    res.status(400).json({ error: 'An error occurred while fetching groups' });
   }
 });
 
