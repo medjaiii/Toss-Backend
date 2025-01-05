@@ -399,17 +399,26 @@ SignUpRouter.get('/groups/user/:userId', async (req, res) => {
       var members = [];
       for (const memberId of group.members) {
         console.log("member id: ", memberId);
-        const user = await SignUpModel.findOne({ _id: memberId })
-          .select('name email');
-        if (user) {
+
+        // Combine queries into a single promise
+        const userPromise = SignUpModel.findOne({ _id: memberId })
+          .select('name email')
+          .lean() // Convert to plain JavaScript object for better performance
+          .orFail() // Throw an error if no document is found
+          .catch(async () => {
+            return await PromoterSignUpModel.findOne({ _id: memberId })
+              .select('full_name as name, work_email as email')
+              .lean()
+              .orFail();
+          });
+
+        try {
+          const user = await userPromise;
           members.push(user);
-        } else {
-          const user = await PromoterSignUpModel.findOne({ _id: memberId })
-            .select('full_name as name, work_email as email');
-          if (user) {
-            members.push(user);
-            console.log(user);
-          }
+          console.log(user);
+        } catch (error) {
+          // Handle the case where the user is not found in either model
+          console.error(`User with ID ${memberId} not found`);
         }
       }
       groupsResult.push({

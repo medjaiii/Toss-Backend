@@ -218,6 +218,7 @@ Progressrouter.post(
     const arrX = await Promise.all(
       Allied_Data.map(async (data) => {
         const SignUpDetails = await SignUpModel.findById(data.user_by);
+        console.log(SignUpDetails);
 
         try {
 

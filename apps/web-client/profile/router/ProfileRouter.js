@@ -196,7 +196,7 @@ UserProfileRouter.get("/userprofile", isAuth, uploadFile, expressAsyncHandler(as
     promoterVideo = videoData ? videoData.promoterVideo : null;
   }
 
-  const news = Object.assign(userProfile, { "FrontImage": imageLink.promoterImages, "promoterVideo": promoterVideo })
+  const news = Object.assign(userProfile, { "userId": req.user._id, "FrontImage": imageLink.promoterImages, "promoterVideo": promoterVideo })
 
   res.status(200).send(news)
 
