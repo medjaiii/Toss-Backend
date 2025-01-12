@@ -430,6 +430,47 @@ SignUpRouter.post('/group-chat/addMember', async (req, res) => {
 });
 
 
+/// api to remove members from the group
+/// API to remove members from the group
+SignUpRouter.post('/group-chat/removeMember', async (req, res) => {
+  const { groupId, userIds } = req.body; // Expecting an array of user IDs to be removed
+
+  try {
+    // Find the group by ID
+    const group = await GroupChat.findById(groupId).populate('members', 'name email');
+
+    if (!group) {
+      return res.status(404).json({ message: 'Group not found' });
+    }
+
+    // Check if the users to be removed are actually in the group
+    const existingMembers = group.members.map(member => member._id.toString());
+    const usersToRemove = userIds.filter(userId => existingMembers.includes(userId));
+
+    if (usersToRemove.length === 0) {
+      return res.status(400).json({ message: 'None of the provided users are members of the group' });
+    }
+
+    // Remove the users from the group
+    group.members = group.members.filter(member => !usersToRemove.includes(member._id.toString()));
+    await group.save();
+
+    // Populate the newly updated members list for response
+    const updatedGroup = await GroupChat.findById(groupId).populate('members', 'name email');
+
+    res.status(200).json({
+      message: 'Users removed from the group successfully',
+      groupId: group._id,
+      members: updatedGroup.members, // Send the updated list of members
+    });
+  } catch (err) {
+    console.error('Error removing members from group:', err);
+    res.status(500).json({ error: 'An error occurred while removing the members from the group' });
+  }
+});
+
+
+
 /// get all the groups of particular user
 SignUpRouter.get('/groups/user/:userId', async (req, res) => {
   const { userId } = req.params;
@@ -499,6 +540,38 @@ SignUpRouter.get('/groups/user/:userId', async (req, res) => {
     res.status(400).json({ error: 'An error occurred while fetching groups' });
   }
 });
+
+SignUpRouter.post('/updateIntroVideo', async (req, res) => {
+  const { userId, intro_video } = req.body;
+
+  console.log(intro_video);
+
+  try {
+    if (!userId) {
+      return res.status(400).json({ message: "User ID is required to update or create a user" });
+    }
+
+    // Update the user if they exist, or insert a new user if they don't
+    const updatedUser = await SignUpModel.findOneAndUpdate(
+      { _id: userId }, // Query to find the user by userId
+      { $set: { intro_video } }, // Update or set fields
+      { new: true, upsert: false } // Update only if the user exists
+    );
+
+    if (!updatedUser) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    res.status(200).json({
+      message: "User updated successfully",
+      user: updatedUser,
+    });
+  } catch (error) {
+    console.error("Error updating user:", error);
+    res.status(500).json({ message: "An error occurred while processing the request", error });
+  }
+});
+
 
 
 

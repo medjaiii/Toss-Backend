@@ -8,6 +8,7 @@ const GroupChatSchema = new Mongoose.Schema({
     members: [{ type: Mongoose.Schema.Types.ObjectId, ref: 'SignUp', required: true }],
     messages: [{
         senderId: { type: Mongoose.Schema.Types.ObjectId, ref: 'SignUp', required: true },
+        senderName: { type: String, required: true },
         messageType: { type: String, required: true },
         isReplying: { type: Boolean, required: false, default: false },
         replyMessageId: { type: Mongoose.Schema.Types.ObjectId, default: null, required: false },

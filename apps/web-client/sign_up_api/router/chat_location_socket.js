@@ -57,14 +57,14 @@ const websocketSetup = (server) => {
 
         // Handle sending group messages
         socket.on("sendGroupMessage", async (data) => {
-            const { groupId, senderId, message, messageType, isReplying = false, replyMessageId = null, fileUrl = "" } = data;
+            const { groupId, senderId, senderName, message, messageType, isReplying = false, replyMessageId = null, fileUrl = "" } = data;
 
             // Verify the group exists and sender is a member
             const groupChat = await GroupChat.findById(groupId);
 
             if (groupChat && groupChat.members.includes(senderId)) {
                 // Add the message to the group chat's messages array
-                groupChat.messages.push({ senderId, message, messageType, isReplying, replyMessageId, fileUrl });
+                groupChat.messages.push({ senderId, senderName, message, messageType, isReplying, replyMessageId, fileUrl });
                 await groupChat.save();
                 const savedMessage = groupChat.messages[groupChat.messages.length - 1];
                 const messageId = savedMessage._id;
@@ -74,6 +74,7 @@ const websocketSetup = (server) => {
                 io.to(groupId).emit("receiveGroupMessage", {
                     groupId,
                     senderId,
+                    senderName,
                     messageId,
                     messageType,
                     fileUrl,
