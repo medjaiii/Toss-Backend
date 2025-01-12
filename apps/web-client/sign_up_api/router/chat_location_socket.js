@@ -86,36 +86,51 @@ const websocketSetup = (server) => {
                 console.log(`Message sent to group ${groupId} by user ${senderId}`);
 
                 var tokens = [];
+                var members = [];
                 for (const memberId of groupChat.members) {
                     console.log("member id: ", memberId);
 
                     // Combine queries into a single promise
                     const userPromise = SignUpModel.findOne({ _id: memberId })
-                        .select('firebaseToken')
+                        .select('_id firebaseToken name email')
                         .lean() // Convert to plain JavaScript object for better performance
                         .orFail() // Throw an error if no document is found
                         .catch(async () => {
                             return await PromoterSignUpModel.findOne({ _id: memberId })
-                                .select('firebaseToken')
+                                .select('_id, full_name as name, work_email as email, firebaseToken ')
                                 .lean()
                                 .orFail();
                         });
 
                     try {
-                        const token = await userPromise;
-                        tokens.push(token["firebaseToken"]);
-                        console.log(token);
+                        const user = await userPromise;
+                        if (user.name && user.email) {
+                            members.push({ _id: user._id, name: user.name, email: user.email });
+                        } else if (user.full_name && user.work_email) {
+                            members.push({ _id: user._id, name: user.full_name, email: user.work_email });
+                        }
+
+                        if (user.firebaseToken) {
+                            tokens.push(user.firebaseToken);
+                        }
                     } catch (error) {
-                        // Handle the case where the user is not found in either model
-                        console.error(`Token for member ${memberId} not found`);
+                        console.error(`User with ID ${memberId} not found`);
                     }
                 }
                 try {
                     var title = groupChat.groupName;
                     var body = message;
                     var data = {
-                        'type': "group_message_notification",
-                    }
+                        type: "group_message_notification",
+                        _id: groupChat.id,
+                        groupName: groupChat.groupName,
+                        groupDescription: groupChat.groupDescription,
+                        groupProfilePic: groupChat.groupProfilePic,
+                        adminId: groupChat.adminId,
+                        members: JSON.stringify(members), // Convert members array to string
+                        updatedAt: groupChat.updatedAt.toISOString(), // Ensure the date is stringified
+                    };
+                    console.log("tokens list :=>=> ", tokens);
                     const response = await sendNotification({ title, body, tokens, data });
                     console.log('Notification sent successfully!');
                 } catch (error) {
@@ -148,8 +163,14 @@ const websocketSetup = (server) => {
                     { $pull: { messages: { _id: messageObjectId } } }, // Remove the message by its ObjectId
                     { new: true } // Return the updated document
                 );
+                console.log(
+                    "outside deleted msg emit"
+                );
 
                 if (result) {
+                    console.log(
+                        "inside deleted msg emit"
+                    );
                     // Emit event to notify group members about the deleted message
                     io.to(groupId).emit("removeDeletedGroupMessage", {
                         groupId,
