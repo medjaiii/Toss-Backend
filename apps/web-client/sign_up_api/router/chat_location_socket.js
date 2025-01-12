@@ -15,10 +15,10 @@ const websocketSetup = (server) => {
         console.log("User connected");
 
         // Handle user joining (store socket ID)
-        socket.on("join", (userId) => {
-            SignUpModel.findByIdAndUpdate(userId, { socketId: socket.id }).exec();
-            console.log(socket.id);
-        });
+        // socket.on("join", (userId) => {
+        //     SignUpModel.findByIdAndUpdate(userId, { socketId: socket.id }).exec();
+        //     console.log(socket.id);
+        // });
 
 
         // Handle user joining a group

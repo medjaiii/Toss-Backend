@@ -2,14 +2,13 @@
 import admin from 'firebase-admin';
 import fs from 'fs';
 
-// Read Firebase service account JSON
-const serviceAccount = JSON.parse(
-    fs.readFileSync(new URL('./firebase-service-account.json', import.meta.url))
-);
+import { config } from "dotenv";
+config();
 
-// Initialize Firebase Admin SDK
-admin.initializeApp({
-    credential: admin.credential.cert(serviceAccount),
+import { cert, initializeApp } from "firebase-admin/app";
+
+initializeApp({
+    credential: cert(JSON.parse(process.env.FIREBASE_ADMIN_SDK_CONFIG)),
 });
 
 // Function to send notifications
