@@ -1,9 +1,11 @@
 import { Server } from "socket.io";
 import SignUpModel from "../model/SignUpModel.js";
+import PromoterSignUpModel from "../model/PromoterSignUpModel.js";
 import Chat from "../model/chat.js";
 import Location from "../model/location.js";
 import GroupChat from "../model/group_chat_schema.js";
-// import sendNotification from "./sendNotification";
+import sendNotification from "../../notification-service/send_notification.js";
+import mongoose from "mongoose";
 
 const websocketSetup = (server) => {
     const io = new Server(server);
@@ -55,29 +57,115 @@ const websocketSetup = (server) => {
 
         // Handle sending group messages
         socket.on("sendGroupMessage", async (data) => {
-            const { groupId, senderId, message } = data;
+            const { groupId, senderId, message, messageType, isReplying = false, replyMessageId = null, fileUrl = "" } = data;
 
             // Verify the group exists and sender is a member
             const groupChat = await GroupChat.findById(groupId);
 
             if (groupChat && groupChat.members.includes(senderId)) {
                 // Add the message to the group chat's messages array
-                groupChat.messages.push({ senderId, message });
+                groupChat.messages.push({ senderId, message, messageType, isReplying, replyMessageId, fileUrl });
                 await groupChat.save();
+                const savedMessage = groupChat.messages[groupChat.messages.length - 1];
+                const messageId = savedMessage._id;
+                console.log(messageId);
 
                 // Notify all members in the group (excluding the sender)
                 io.to(groupId).emit("receiveGroupMessage", {
                     groupId,
                     senderId,
+                    messageId,
+                    messageType,
+                    fileUrl,
+                    isReplying,
+                    replyMessageId,
                     message,
                     timestamp: new Date().toISOString(),
                 });
                 console.log(`Message sent to group ${groupId} by user ${senderId}`);
+
+                var tokens = [];
+                for (const memberId of groupChat.members) {
+                    console.log("member id: ", memberId);
+
+                    // Combine queries into a single promise
+                    const userPromise = SignUpModel.findOne({ _id: memberId })
+                        .select('firebaseToken')
+                        .lean() // Convert to plain JavaScript object for better performance
+                        .orFail() // Throw an error if no document is found
+                        .catch(async () => {
+                            return await PromoterSignUpModel.findOne({ _id: memberId })
+                                .select('firebaseToken')
+                                .lean()
+                                .orFail();
+                        });
+
+                    try {
+                        const token = await userPromise;
+                        tokens.push(token["firebaseToken"]);
+                        console.log(token);
+                    } catch (error) {
+                        // Handle the case where the user is not found in either model
+                        console.error(`Token for member ${memberId} not found`);
+                    }
+                }
+                try {
+                    var title = groupChat.groupName;
+                    var body = message;
+                    var data = {
+                        'type': "group_message_notification",
+                    }
+                    const response = await sendNotification({ title, body, tokens, data });
+                    console.log('Notification sent successfully!');
+                } catch (error) {
+                    console.error('Error sending notification:', error);
+                }
             } else {
                 console.log(`Failed to send message: User ${senderId} not in group ${groupId}`);
                 socket.emit("error", { message: "You are not authorized to send messages to this group" });
             }
         });
+
+        // Handle deleting group messages
+        socket.on("deleteGroupMessage", async (data) => {
+            const { groupId, messageId = null } = data;
+
+            // Validate IDs before proceeding
+            if (!mongoose.isValidObjectId(groupId) || !mongoose.isValidObjectId(messageId)) {
+                console.error('Invalid groupId or messageId provided');
+                return socket.emit("error", { message: "Invalid groupId or messageId" });
+            }
+
+            try {
+                // Convert valid IDs to ObjectId
+                const groupObjectId = mongoose.Types.ObjectId(groupId);
+                const messageObjectId = mongoose.Types.ObjectId(messageId);
+
+                // Find the group and remove the message
+                const result = await GroupChat.findOneAndUpdate(
+                    { _id: groupObjectId }, // Find the group by its ObjectId
+                    { $pull: { messages: { _id: messageObjectId } } }, // Remove the message by its ObjectId
+                    { new: true } // Return the updated document
+                );
+
+                if (result) {
+                    // Emit event to notify group members about the deleted message
+                    io.to(groupId).emit("removeDeletedGroupMessage", {
+                        groupId,
+                        messageId,
+                        timestamp: new Date().toISOString(),
+                    });
+                    console.log(`Message deleted from group ${groupId}`);
+                } else {
+                    console.log(`Failed to delete message: message ${messageId} not in group ${groupId}`);
+                    socket.emit("error", { message: "Group or message not found" });
+                }
+            } catch (error) {
+                console.error('Error while deleting message:', error);
+                socket.emit("error", { message: "An error occurred while deleting the message" });
+            }
+        });
+
 
         // Handle sending chat messages
         socket.on("sendMessage", async (data) => {

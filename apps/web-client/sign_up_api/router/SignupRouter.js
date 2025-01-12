@@ -11,11 +11,11 @@ import dotenv from "dotenv"
 import ProfileModel from "../../profile/model/UserProfile.js";
 import UserProfileImages from "../../profile/model/UserImages.js";
 import { option } from "../../../../DataBaseConstants.js";
-// const Chat = require('../model/chat.js');
 import Chat from '../model/chat.js';
 import GroupChat from '../model/group_chat_schema.js';
 import Mongoose from "mongoose";
 import PromoterSignUpModel from "../model/PromoterSignUpModel.js";
+import sendNotification from '../../notification-service/send_notification.js';
 
 dotenv.config()
 
@@ -57,6 +57,10 @@ SignUpRouter.post(
       password: bcrypt.hashSync(req.body.password, 8),
       job_images: getId
     });
+
+    if (req.body.firebaseToken) {
+      userObject.firebaseToken = req.body.firebaseToken;
+    }
 
     const userProfileImages = new UserProfileImages({
       userProfileImage: images,
@@ -131,10 +135,18 @@ SignUpRouter.post("/signin", expressAsyncHandler(async (req, res) => {
 
   // we cannot signup using username as UX is not available for username
   const findUser = await SignUpModel.findOne({ email: req.body.email })
+  console.log("reached here 1");
   if (findUser) {
     if (bcrypt.compareSync(req.body.password, findUser.password)) {
       console.log(findUser.isVerified === "true")
       if (findUser.isVerified === "true") {
+        console.log("reached here 4");
+        if (req.body.firebaseToken) {
+          console.log("fcm token is: ", req.body.firebaseToken);
+          // Update the firebaseToken if it's provided in the request
+          findUser.firebaseToken = req.body.firebaseToken;
+          await findUser.save(); // Save the updated user with the new firebaseToken
+        }
         const imageLink = await PromoterProfileImages.findById(findUser.job_images)
         const updatedUser = Object.assign(findUser, { job_images: imageLink })
 
@@ -279,7 +291,7 @@ SignUpRouter.get('/chat/:userId1/:userId2', async (req, res) => {
 
 /// api to create a group chat
 SignUpRouter.post('/group-chat', async (req, res) => {
-  const { groupName, groupDescription, memberIds } = req.body;
+  const { groupName, groupDescription, memberIds, groupProfilePic, adminId } = req.body;
 
   if (!groupName || !groupDescription || !memberIds || memberIds.length < 2) {
     return res.status(400).json({ error: 'Group name, description and at least two members are required' });
@@ -289,13 +301,52 @@ SignUpRouter.post('/group-chat', async (req, res) => {
     const groupChat = new GroupChat({
       groupName,
       groupDescription,
+      groupProfilePic,
+      adminId: adminId,
       members: memberIds,
     });
 
     await groupChat.save();
 
-    res.status(200).json({ message: 'Group chat created successfully', groupChat });
+    var members = [];
+
+    for (const memberId of groupChat.members) {
+      console.log("member id: ", memberId);
+
+      // Combine queries into a single promise
+      const userPromise = SignUpModel.findOne({ _id: memberId })
+        .select('name email')
+        .lean() // Convert to plain JavaScript object for better performance
+        .orFail() // Throw an error if no document is found
+        .catch(async () => {
+          return await PromoterSignUpModel.findOne({ _id: memberId })
+            .select('full_name as name, work_email as email')
+            .lean()
+            .orFail();
+        });
+
+      try {
+        const user = await userPromise;
+        members.push(user);
+        console.log(user);
+      } catch (error) {
+        // Handle the case where the user is not found in either model
+        console.error(`User with ID ${memberId} not found`);
+      }
+    }
+
+    res.status(200).json({
+      message: 'Group chat created successfully',
+      "_id": groupChat.id,
+      "groupName": groupChat.groupName,
+      "groupDescription": groupChat.groupDescription,
+      "groupProfilePic": groupChat.groupProfilePic,
+      "adminId": adminId,
+      "members": members,
+      "updatedAt": groupChat.updatedAt,
+    });
   } catch (err) {
+    console.log(err);
     res.status(500).json({ error: 'Error creating group chat' });
   }
 });
@@ -341,7 +392,7 @@ SignUpRouter.get('/group-chat/:groupId', async (req, res) => {
 
 /// api to add new member to the group
 SignUpRouter.post('/group-chat/addMember', async (req, res) => {
-  const { groupId, userId } = req.body;
+  const { groupId, userIds } = req.body;  // Expecting an array of user IDs
 
   try {
     // Find the group by ID
@@ -351,26 +402,30 @@ SignUpRouter.post('/group-chat/addMember', async (req, res) => {
       return res.status(404).json({ message: 'Group not found' });
     }
 
-    // Check if the user is already a member
-    if (group.members.some(member => member._id.toString() === userId)) {
-      return res.status(400).json({ message: 'User is already a member of the group' });
+    // Filter out already existing members from the provided list
+    const newUserIds = userIds.filter(userId =>
+      !group.members.some(member => member._id.toString() === userId)
+    );
+
+    if (newUserIds.length === 0) {
+      return res.status(400).json({ message: 'All users are already members of the group' });
     }
 
-    // Add the new member to the group
-    group.members.push(userId);
+    // Add the new users to the group
+    group.members.push(...newUserIds);
     await group.save();
 
     // Populate the newly updated members list for response
     const updatedGroup = await GroupChat.findById(groupId).populate('members', 'name email');
 
     res.status(200).json({
-      message: 'User added to the group successfully',
+      message: 'Users added to the group successfully',
       groupId: group._id,
       members: updatedGroup.members, // Send the updated list of members
     });
   } catch (err) {
-    console.error('Error adding member to group:', err);
-    res.status(500).json({ error: 'An error occurred while adding the member to the group' });
+    console.error('Error adding members to group:', err);
+    res.status(500).json({ error: 'An error occurred while adding the members to the group' });
   }
 });
 
@@ -384,7 +439,7 @@ SignUpRouter.get('/groups/user/:userId', async (req, res) => {
     let groupsResult = [];
     // Find all groups where the user is a member
     let groups = await GroupChat.find({ members: userId })
-      .select('groupName groupDescription members'); // Select only necessary fields
+      .select('groupName groupDescription members groupProfilePic adminId'); // Select only necessary fields
 
 
     if (!groups || groups.length === 0) {
@@ -425,7 +480,10 @@ SignUpRouter.get('/groups/user/:userId', async (req, res) => {
         "_id": group.id,
         "groupName": group.groupName,
         "groupDescription": group.groupDescription,
+        "groupProfilePic": group.groupProfilePic,
+        "adminId": group.adminId,
         "members": members,
+        "updatedAt": group.updatedAt,
       })
     }
 

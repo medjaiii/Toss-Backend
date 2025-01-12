@@ -21,6 +21,7 @@ const signupSchema = new Mongoose.Schema(
     },
     password: { type: String, required: [true, "password requred"] },
     job_images: { type: Mongoose.Schema.Types.ObjectId, ref: "PromoterProfileImages" },
+    firebaseToken: { type: String, required: false },
     createdDate: {
       type: Date,
       default: Date.now

@@ -25,6 +25,7 @@ const signupSchema = new Mongoose.Schema(
       default: Date.now
     },
     isVerified: { type: String, default: false },
+    firebaseToken: { type: String, required: false },
   },
   {
     timestamps: true,

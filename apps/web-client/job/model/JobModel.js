@@ -28,6 +28,7 @@ const jobSchema = new Mongoose.Schema(
     job_images: { type: String },
     posted_by: { type: Mongoose.Schema.Types.ObjectId, ref: "PromoterSignUp" },
     payment: { type: Number, default: 500 },
+    group_id: { type: Mongoose.Schema.Types.ObjectId, required: false },
     createdDate: {
       type: Date,
       default: Date.now

@@ -12,8 +12,8 @@ Jobrouter.post(
   isPromoterAuth,
   uploadFile,
   expressAsyncHandler(async (req, res) => {
-    
-    const jobObject = Object.assign(req.body, { job_images: req.files[0].location,posted_by:req.user });
+
+    const jobObject = Object.assign(req.body, { job_images: req.files[0].location, posted_by: req.user });
 
     const jobmodel = new Jobmodel(jobObject);
 
@@ -35,13 +35,13 @@ Jobrouter.get(
   isAuth,
   expressAsyncHandler(async (req, res, next) => {
 
-    const getAppliedJobs = await AppliedModel.find({"user_by":req.user._id})
-    if(getAppliedJobs.length>0){
-      const getarr = getAppliedJobs.map((data)=>data.jobs)
-      const getalljobs = await Jobmodel.find({_id:{"$nin":getarr}})
+    const getAppliedJobs = await AppliedModel.find({ "user_by": req.user._id })
+    if (getAppliedJobs.length > 0) {
+      const getarr = getAppliedJobs.map((data) => data.jobs)
+      const getalljobs = await Jobmodel.find({ _id: { "$nin": getarr } })
       res.status(200).send(getalljobs);
-    }else{
-      const getalljobs = await Jobmodel.find({job_status:{$ne:"Disable"}});
+    } else {
+      const getalljobs = await Jobmodel.find({ job_status: { $ne: "Disable" } });
       res.status(200).send(getalljobs);
     }
 
@@ -54,12 +54,29 @@ Jobrouter.post(
   isPromoterAuth,
   expressAsyncHandler(async (req, res, next) => {
 
-    await Jobmodel.findByIdAndUpdate({_id:req.body.jobID,posted_by:req.user._id},{"job_status":"Disable"}).exec(function(err,dta){
-      if(err){
+    await Jobmodel.findByIdAndUpdate({ _id: req.body.jobID, posted_by: req.user._id }, { "job_status": "Disable" }).exec(function (err, dta) {
+      if (err) {
         res.status(400).send("Error While Closing job")
-      }else{
+      } else {
 
-        res.status(200).send({"message":"Job Closed Successfully"});
+        res.status(200).send({ "message": "Job Closed Successfully" });
+      }
+    })
+
+  })
+);
+
+//close job
+Jobrouter.post(
+  "/update-groupid",
+  isPromoterAuth,
+  expressAsyncHandler(async (req, res, next) => {
+
+    await Jobmodel.findByIdAndUpdate({ _id: req.body.jobID, posted_by: req.user._id }, { "group_id": req.body.groupId }).exec(function (err, dta) {
+      if (err) {
+        res.status(400).send("Error While updating groupID")
+      } else {
+        res.status(200).send({ "message": "Group Added Successfully" });
       }
     })
 
@@ -72,21 +89,21 @@ Jobrouter.get(
   expressAsyncHandler(async (req, res, next) => {
 
     const getAppliedJobs = await AppliedModel.find({})
-    const getarr = getAppliedJobs.map((data)=>data.jobs)
+    const getarr = getAppliedJobs.map((data) => data.jobs)
     const getalljobs = await Jobmodel.find({})
-      res.status(200).send(getalljobs);
+    res.status(200).send(getalljobs);
 
   })
 );
 
-Jobrouter.delete("/deletejob",isAdminAuth,expressAsyncHandler(async(req,res)=>{
-  console.log(">>",req.body)
-  const job  = await Jobmodel.findById(req.body.userid)
+Jobrouter.delete("/deletejob", isAdminAuth, expressAsyncHandler(async (req, res) => {
+  console.log(">>", req.body)
+  const job = await Jobmodel.findById(req.body.userid)
   if (!job) {
-    res.status(400).send({"message":'User not found'});
-  }else{
+    res.status(400).send({ "message": 'User not found' });
+  } else {
     await job.remove()
-    res.status(400).send({"message":"Job Deleted"})
+    res.status(400).send({ "message": "Job Deleted" })
   }
 
 }))

@@ -24,6 +24,10 @@ PromoterSignup.post(
 
     const promoterObject = Object.assign(req.body, { job_images: getId }, { password: bcrypt.hashSync(req.body.password, 8) });
 
+    if (req.body.firebaseToken) {
+      promoterObject.firebaseToken = req.body.firebaseToken;
+    }
+
     const sinupModel = new PromoterSignUpModel(promoterObject);
 
     sinupModel
@@ -44,6 +48,11 @@ PromoterSignup.post("/signin", expressAsyncHandler(async (req, res, next) => {
   const findUser = await PromoterSignUpModel.findOne({ work_email: req.body.email })
   if (findUser) {
     if (bcrypt.compareSync(req.body.password, findUser.password)) {
+      if (req.body.firebaseToken) {
+        // Update the firebaseToken if it's provided in the request
+        findUser.firebaseToken = req.body.firebaseToken;
+        await findUser.save(); // Save the updated user with the new firebaseToken
+      }
       const imageLink = await PromoterProfileImages.findById(findUser.job_images)
       const updatedUser = Object.assign(findUser, { job_images: imageLink })
 
