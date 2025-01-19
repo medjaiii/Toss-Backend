@@ -22,6 +22,23 @@ async function sendNotification({ title, body, tokens, data }) {
             },
             data: data || {},
             tokens: tokens,  // Using token individually
+            android: {
+                priority: "high",
+                notification: {
+                    sound: "default", // Use "default" for the default tone or specify a custom sound file
+                },
+            },
+            apns: {
+                payload: {
+                    aps: {
+                        sound: "default", // Use "default" for the default tone or specify a custom sound file
+                        contentAvailable: true,
+                    },
+                },
+                headers: {
+                    "apns-priority": "10", // Sets the priority to high for iOS
+                },
+            },
         };
 
         // Send the messages using sendAll
